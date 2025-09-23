@@ -15,8 +15,52 @@ class Parameters
         // number of genes in network
         unsigned L{5};
 
+        // initial value of each node in the grn
+        double w_init{0.0};
+
+        // initial connectivity value //TODO
+        double connectivity{0.75}
+
+        // initial value of each element of the phenotype
+        double s_init{0.0};
+
+        // constitutive gene expression value
+        // in the absence of any GRN, this is the value
+        // attained by each element of S
+        double a{0.0};
+
+        // proportion inheritance that is nongenetic
+        double p_nongenetic{0.0};
+
+        // if proportion inheritance > 0
+        // then p_maternal determines proportion inherited
+        // from mother vs inherited from father
+        //
+        // alternative ideas would be to designate specific
+        // genes to maternal vs paternal transmission
+        double p_maternal{0.0};
+
+        // maximum number of time steps that simulation lasts
+        unsigned long max_time_step{10};
+        
+        // number of developmental time steps
+        // has to be larger than 0
+        unsigned max_dev_time_step{10};
+
+        // number of developmental time steps
+        // recorded for stats. These are the final
+        // n time steps before development has been
+        // completed.
+        unsigned max_dev_time_step_stats{4};
+
+        // mutation rate of W matrix entries
+        double mu_w{0.02};
+        
+        // standard deviation of W matrix entries
+        double sdmu_w{0.02};
+
         std::string file_name{"grn_simulation.csv"};
 };
 
 
-#endif _PARAMETERS_HPP_
+#endif 
