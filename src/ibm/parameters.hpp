@@ -59,6 +59,14 @@ class Parameters
         // standard deviation of W matrix entries
         double sdmu_w{0.02};
 
+        // strength of selection on matching the optimum
+        // see Odorico et al. eq (4)
+        double s{0.5};
+        // strength of selection on variance 
+        // of gene expression
+        // see Odorico et al. eq (4)
+        double sprime{46000.0};
+
         std::string file_name{"grn_simulation.csv"};
 };
 

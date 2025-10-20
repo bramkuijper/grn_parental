@@ -3,12 +3,14 @@
 #include <cassert>
 #include "individual.hpp"
 
+// how to make an individual at the start of the simulation
 Individual::Individual(Parameters const &par) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
     S(par.L, std::vector< double >(par.L) )
 {} // end Individual() initialization constructor
 
+// how you build an individual from another one
 Individual::Individual(Individual const &other) :
     pars(other.pars),
     W(other.W),
@@ -52,10 +54,20 @@ Individual::Individual(Individual const &mom,
     // products, contained in the phenotype vector S
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {
+        // at the moment this does not deal with absolute gamete size
+        // a 1:5 ratio of paternal:maternal gamete sizes has p_maternal 5/6
+        // but also a 10:50 ratio of paternal gamete sizes has the same p_maternal
+        // this may be fair but in the latter case, both parents transmit a lot more
+        // gene product than in the former case. Model does not deal with that stuff
+        // at the moment... TODO
         S[0][row_idx] = (1.0 - pars.p_nongenetic) * pars.a
             + pars.p_nongenetic * (
+                    // transmit maternal gene expression level right before she
+                    // reproduces
                     pars.p_maternal * mom.S[pars.max_dev_time_step - 1][row_idx]
                     +
+                    // transmit paternal gene expression level right before he
+                    // reproduces
                     (1.0 - pars.p_maternal) * dad.S[pars.max_dev_time_step - 1][row_idx]
                 );
     } // end transmission of S
@@ -68,29 +80,78 @@ void Individual::operator=(Individual const &other)
     S = other.S;
 } // end operator=()
 
+// calculate omega_s as in Odorico eq. (4)
+double Individual::fitness()
+{
+    double exponent{0.0};
+
+    for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
+    {
+        // the power function pow() slower than actually just squaring things
+        exponent += -pars.s * (Sbar[s_idx] - pars.theta[s_idx]) * 
+            (Sbar[s_idx] - pars.theta[s_idx])
+            -pars.sprime * Vbar[s_idx];  
+    }
+
+    return(std::exp(-pars.s_exp * exponent));
+} // end omega_s()
+
+// calculate omega_i as in Odorico eq. (4)
+double Individual::omega_i()
+{
+    double exponent{0};
+
+
+} // end omega_s()
+
+
 void Individual::average_phenotype()
 {
-    // empty vector for the averages
-    std::fill(Sbar.begin(),Sbar.end(),
+    // empty vector for the averages over time 
+    // for each of the traits
+    std::fill(Sbar.begin(),Sbar.end(), 0.0);
+    // empty vector for the variances over time 
+    // for each of the traits
+    std::fill(V.begin(),V.end(), 0.0);
 
-    for (unsigned t_prior{pars.max_dev_time_step - 1 - pars.max_dev_time_step_stats}; 
-            t_prior < pars.max_dev_time_step; ++t_prior)
+    double sval; // auxiliary variable to store temporary values
+
+    // take averages over max_dev_time_step_stats measured from
+    // the end of the S vector (as we only want to average over
+    // the final values of S towards the end of development, not
+    // necessarily the earlier values of S during early development)
+    for (unsigned t_prior{pars.max_dev_time_step -
+            pars.max_dev_time_step_stats}; 
+            t_prior < pars.max_dev_time_step; 
+            ++t_prior)
     {
+        // some boundary checking
         assert(t_prior >= 0);
         assert(t_prior < S.size());
         assert(S[0].size() == pars.L);
 
         for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
         {
-            Sbar[s_idx] += S[t_prior][s_idx];
+            sval = S[t_prior][s_idx];
+            Sbar[s_idx] += sval;
+
+            // first calculate variance as sum of squares
+            // we later then subtract the square of the means
+            V[s_idx] += sval * sval;
+
         } // end for s_idx
     } // end for t_prior
     
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
-        Sbar[s_idx] += S[t_prior][s_idx] / 
+        Sbar[s_idx] = Sbar[s_idx] / 
             pars.max_dev_time_step_stats;
+
+        // variance = sum of squares - mean * mean;
+        V[s_idx] = V[s_idx] / pars.max_dev_time_step_stats - 
+            Sbar[s_idx] * Sbar[s_idx];
+
     } // end for s_idx
 } // end function average phenotype
 

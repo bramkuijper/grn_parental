@@ -41,8 +41,12 @@ class Individual
         // calculations.  
         std::vector < std::vector < double > > S{};
 
-        // average phenotype
+        // average phenotype where Sbar[i] is the time-average
+        // phenotype of trait i
         std::vector <double> Sbar{};
+        // variance in phenotype where Vbar[i] is the variance
+        // of phenotype of trait i, measured over time
+        std::vector <double> V{};
        
         // initialisation constructor, 
         // used at the start of the simulation
