@@ -38,6 +38,8 @@ class GRN_MatPat
         std::vector<Individual> males;
         std::vector<Individual> females;
 
+        std::vector<Individual> juveniles;
+
     public:
         // the constructor of the simulation
         GRN_MatPat(Parameters const &params);
@@ -45,6 +47,8 @@ class GRN_MatPat
         // run the actual simulation
         void run();
 
+        void reproduce();
+        void write_data();
 };
 
 #endif

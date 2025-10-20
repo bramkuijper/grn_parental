@@ -75,6 +75,9 @@ class Individual
 
         void average_phenotype();
 
+        // calculate an individual's fitness
+        double fitness();
+
 }; // end class individual
 
 #endif

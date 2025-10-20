@@ -90,20 +90,11 @@ double Individual::fitness()
         // the power function pow() slower than actually just squaring things
         exponent += -pars.s * (Sbar[s_idx] - pars.theta[s_idx]) * 
             (Sbar[s_idx] - pars.theta[s_idx])
-            -pars.sprime * Vbar[s_idx];  
+            -pars.sprime * V[s_idx];  
     }
 
-    return(std::exp(-pars.s_exp * exponent));
-} // end omega_s()
-
-// calculate omega_i as in Odorico eq. (4)
-double Individual::omega_i()
-{
-    double exponent{0};
-
-
-} // end omega_s()
-
+    return(std::exp(exponent));
+} // end fitness()
 
 void Individual::average_phenotype()
 {

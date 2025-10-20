@@ -2,6 +2,7 @@
 #define _PARAMETERS_HPP_
 
 #include <string>
+#include <vector>
 
 class Parameters
 {
@@ -19,7 +20,7 @@ class Parameters
         double w_init{0.0};
 
         // initial connectivity value //TODO
-        double connectivity{0.75}
+        double connectivity{0.75};
 
         // initial value of each element of the phenotype
         double s_init{0.0};
@@ -59,6 +60,9 @@ class Parameters
         // standard deviation of W matrix entries
         double sdmu_w{0.02};
 
+        // optimum for each locus
+        std::vector <double> theta;
+
         // strength of selection on matching the optimum
         // see Odorico et al. eq (4)
         double s{0.5};
@@ -68,6 +72,10 @@ class Parameters
         double sprime{46000.0};
 
         std::string file_name{"grn_simulation.csv"};
+
+        Parameters() :
+            theta(L, 0.0)
+        {}
 };
 
 
