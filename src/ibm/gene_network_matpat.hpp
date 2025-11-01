@@ -15,9 +15,13 @@ class GRN_MatPat
 
         // object to store the file to write output to
         std::ofstream data_file;
+        std::ofstream data_file_individuals;
 
         // standard uniform distribution on the unit line (0,1)
         std::uniform_real_distribution<double> uniform{0.0,1.0};
+
+        // the standard normal distribution
+        std::normal_distribution<double> normal{0.0,1.0};
 
         // device to generate seeds for random number generators
         std::random_device rd;
@@ -40,6 +44,9 @@ class GRN_MatPat
 
         std::vector<Individual> juveniles;
 
+        // meanW for calculation of canalization
+        std::vector < std::vector < double > > meanW;
+
     public:
         // the constructor of the simulation
         GRN_MatPat(Parameters const &params);
@@ -47,8 +54,13 @@ class GRN_MatPat
         // run the actual simulation
         void run();
 
+        void initialize_population();
         void reproduce();
         void write_data();
+        void write_data_headers();
+        void write_out_all_individuals();
+        void write_parameters();
+        void write_out_all_individuals_headers();
 };
 
 #endif

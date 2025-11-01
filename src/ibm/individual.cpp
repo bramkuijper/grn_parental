@@ -10,6 +10,7 @@ Individual::Individual(Parameters const &par) :
     S(par.L, std::vector< double >(par.L) )
 {} // end Individual() initialization constructor
 
+
 // how you build an individual from another one
 Individual::Individual(Individual const &other) :
     pars(other.pars),
@@ -88,7 +89,7 @@ double Individual::fitness()
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
         // the power function pow() slower than actually just squaring things
-        exponent += -pars.s * (Sbar[s_idx] - pars.theta[s_idx]) * 
+        exponent += -pars.s[s_idx] * (Sbar[s_idx] - pars.theta[s_idx]) * 
             (Sbar[s_idx] - pars.theta[s_idx])
             -pars.sprime * V[s_idx];  
     }

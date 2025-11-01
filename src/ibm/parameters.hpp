@@ -13,14 +13,18 @@ class Parameters
         // population size
         unsigned N{1000};
 
+        unsigned N_canalize{1000};
+
         // number of genes in network
         unsigned L{5};
 
         // initial value of each node in the grn
         double w_init{0.0};
 
-        // initial connectivity value //TODO
-        double connectivity{0.75};
+        // initialize for each individual the elements of w
+        // as per p689 2nd column 1st paragraph in Odorico et al
+        // [Wij drawn on N(0,0.1)]
+        double sd_init_strength_w{0.1};
 
         // initial value of each element of the phenotype
         double s_init{0.0};
@@ -65,16 +69,22 @@ class Parameters
 
         // strength of selection on matching the optimum
         // see Odorico et al. eq (4)
-        double s{0.5};
+        // we are going to make this trait-specific, so that
+        // we can turn off selection on specific traits
+        std::vector <double> s;
+
+
         // strength of selection on variance 
         // of gene expression
         // see Odorico et al. eq (4)
         double sprime{46000.0};
 
         std::string file_name{"grn_simulation.csv"};
+        std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
         Parameters() :
-            theta(L, 0.0)
+            theta(L, 0.0), // initialize all the values for theta
+            s(L, 0.0) // initialize all the values for s
         {}
 };
 

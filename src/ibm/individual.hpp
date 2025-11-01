@@ -34,11 +34,13 @@ class Individual
         // each row here is a phenotype vector at time t = 0,
         // 1, 2, ..., max_tS.
         // where the vector S[0] is the initial
-        // vector of gene expression levels at birth.
+        // vector of gene expression levels at birth. Consequently,
+        // S[0][0] is the phenotype of trait 0 at time 0.
         // By contrast, the vector S[max_tS - 1] 
         // is the most recent
         // phenotype vector and the one used for fitness 
-        // calculations.  
+        // calculations. 
+        // hence
         std::vector < std::vector < double > > S{};
 
         // average phenotype where Sbar[i] is the time-average
