@@ -10,13 +10,6 @@
 class GRN_MatPat
 {
     private:
-        // parameter object
-        Parameters par;
-
-        // object to store the file to write output to
-        std::ofstream data_file;
-        std::ofstream data_file_individuals;
-
         // standard uniform distribution on the unit line (0,1)
         std::uniform_real_distribution<double> uniform{0.0,1.0};
 
@@ -37,6 +30,14 @@ class GRN_MatPat
 
         // time step of the simulation
         unsigned time_step{0};
+        
+        // parameter object
+        Parameters par;
+
+        // object to store the file to write output to
+        std::ofstream data_file;
+        std::ofstream data_file_individuals;
+
       
         // the population
         std::vector<Individual> males;

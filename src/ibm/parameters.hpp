@@ -18,9 +18,6 @@ class Parameters
         // number of genes in network
         unsigned L{5};
 
-        // initial value of each node in the grn
-        double w_init{0.0};
-
         // initialize for each individual the elements of w
         // as per p689 2nd column 1st paragraph in Odorico et al
         // [Wij drawn on N(0,0.1)]
@@ -30,9 +27,10 @@ class Parameters
         double s_init{0.0};
 
         // constitutive gene expression value
+        // see Odorico et al 2018 p 689 1st column, 1st para
         // in the absence of any GRN, this is the value
         // attained by each element of S
-        double a{0.0};
+        double a{0.2};
 
         // proportion inheritance that is nongenetic
         double p_nongenetic{0.0};

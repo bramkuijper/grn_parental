@@ -7,6 +7,7 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     rd{},
     seed{rd()},
     rng_r{seed},
+    par{par},
     data_file{par.file_name},
     data_file_individuals{par.file_name_individuals},
     males(par.N/2, Individual(par)),
@@ -108,6 +109,9 @@ void GRN_MatPat::develop()
 
 void GRN_MatPat::reproduce()
 {
+    assert(females.size() > 0);
+    assert(males.size() > 0);
+
     // clear out any old juveniles
     juveniles.clear();
 
@@ -141,6 +145,9 @@ void GRN_MatPat::reproduce()
         female_fitnesses.push_back(ind_iter->fitness());
     }
 
+    assert(females.size() == female_fitnesses.size());
+    assert(males.size() == male_fitnesses.size());
+
     // set up fitness distributions for females
     // so that those individuals with larger 
     // fitness values are more
@@ -163,8 +170,8 @@ void GRN_MatPat::reproduce()
 
         juveniles.push_back(
                 Individual(             // use birth constructor 
-                    males[father_idx],
                     females[mother_idx],
+                    males[father_idx],
                     par,
                     rng_r
                     )
@@ -439,7 +446,6 @@ void GRN_MatPat::write_parameters()
         << std::endl
         << "N;" << par.N << std::endl
         << "L;" << par.L << std::endl
-        << "w_init;" << par.w_init << std::endl
         << "s_init;" << par.s_init << std::endl
         << "sd_init_strength_w;" << par.sd_init_strength_w << std::endl
         << "a;" << par.a << std::endl
