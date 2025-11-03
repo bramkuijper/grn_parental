@@ -1,5 +1,6 @@
 #include <vector>
 #include <random>
+#include <iostream>
 #include <cassert>
 #include "individual.hpp"
 
@@ -7,7 +8,9 @@
 Individual::Individual(Parameters const &par) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
-    S(par.L, std::vector< double >(par.L) )
+    S(par.max_dev_time_step, std::vector< double >(par.L) ),
+    Sbar(par.L, 0.0),
+    V(par.L,0.0)
 {} // end Individual() initialization constructor
 
 
@@ -15,7 +18,9 @@ Individual::Individual(Parameters const &par) :
 Individual::Individual(Individual const &other) :
     pars(other.pars),
     W(other.W),
-    S(other.S)
+    S(other.S),
+    Sbar(other.Sbar),
+    V(other.V)
 {} // end copy constructor
 
 // the birth constructor: this function is used to
@@ -24,7 +29,11 @@ Individual::Individual(Individual const &mom,
         Individual const &dad,
         Parameters const &par,
         std::mt19937 &rng_r) :
-    pars(par)
+    pars(par),
+    W(par.L, std::vector< double >(par.L) ),
+    S(par.max_dev_time_step, std::vector< double >(par.L) ),
+    Sbar(par.L, 0.0),
+    V(par.L, 0.0)
 {
     // set up distribution functions
     std::uniform_real_distribution uniform{0.0,1.0};
@@ -33,7 +42,7 @@ Individual::Individual(Individual const &mom,
     // inherit GRN gene loci
     for (unsigned row_idx{0}; row_idx < pars.L; ++row_idx)
     {
-        for (unsigned col_idx{0}; col_idx < pars.L; ++row_idx)
+        for (unsigned col_idx{0}; col_idx < pars.L; ++col_idx)
         {
             // Mendelian transmission of a haploid locus
             // while Odorico et al 2018 study both diploidy and haploidy
@@ -79,11 +88,15 @@ void Individual::operator=(Individual const &other)
 {
     W = other.W;
     S = other.S;
+    Sbar = other.Sbar;
+    V = other.V;
 } // end operator=()
 
 // calculate omega_s as in Odorico eq. (4)
 double Individual::fitness()
 {
+    average_phenotype();
+
     double exponent{0.0};
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
@@ -124,10 +137,12 @@ void Individual::average_phenotype()
 
         for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
         {
+            // get value of s_i at time t_prior
             sval = S[t_prior][s_idx];
+            // add that value to average
             Sbar[s_idx] += sval;
 
-            // first calculate variance as sum of squares
+            // also calculate variance as sum of squares
             // we later then subtract the square of the means
             V[s_idx] += sval * sval;
 
@@ -137,6 +152,8 @@ void Individual::average_phenotype()
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
+        // divide by number time steps to obtain arithmetic
+        // average
         Sbar[s_idx] = Sbar[s_idx] / 
             pars.max_dev_time_step_stats;
 
@@ -150,6 +167,13 @@ void Individual::average_phenotype()
 void Individual::update_phenotype(
         unsigned const dev_time_step)
 {
+    if (dev_time_step < 1 || 
+            dev_time_step >= pars.max_dev_time_step)
+    {
+        return;
+    }
+
+
     // TODO: sort out how to quickly loop over matrices in C++
     // TODO: reduce size of S by only focusing on current time step 
     // and then time steps for stats
@@ -161,8 +185,8 @@ void Individual::update_phenotype(
     {
         for (unsigned int col_idx{0}; col_idx < pars.L; ++col_idx)
         {
-            S[dev_time_step + 1][row_idx] += gene_expression_sigmoid(
-                    W[row_idx][col_idx] * S[dev_time_step][col_idx],
+            S[dev_time_step][row_idx] += gene_expression_sigmoid(
+                    W[row_idx][col_idx] * S[dev_time_step - 1][col_idx],
                     pars.a
                     );
         } // end for col_idx
@@ -177,7 +201,7 @@ void Individual::update_phenotype(
 // phenotype, see Runneburger & Le Rouzic (2016) eq. (1)
 double Individual::gene_expression_sigmoid(double const x, double const a)
 {
-    double xtplus1 = a / (a + (1.0 - a) * std::exp(-x/(a * (1.0 - a))));
+    double xtplus1{a / (a + (1.0 - a) * std::exp(-x/(a * (1.0 - a))))};
 
     return(xtplus1);
 }// end gene expression sigmoid

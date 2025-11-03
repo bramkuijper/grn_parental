@@ -12,52 +12,21 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     males(par.N/2, Individual(par)),
     females(par.N/2, Individual(par)),
     meanW(par.L, std::vector < double >(par.L))
-{}
-
-// give each individual a random W matrix
-void GRN_MatPat::initialize_population()
 {
-    for (auto male_itaterator{males.begin()}; 
-            male_iterator != males.end();
-            ++males)
-    {
-        // initialize for each individual the elements of w
-        // as per p689 2nd column 1st paragraph in Odorico et al
-        for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
-        {
-            for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
-            {
-                male_iterator->w[row_idx][col_idx] = 
-                    par.sd_init_strength_w * normal(rng_r);
-            }
-        }
-    }
-    
-    for (auto female_itaterator{females.begin()}; 
-            female_iterator != females.end();
-            ++females)
-    {
-        // initialize for each individual the elements of w
-        // as per p689 2nd column 1st paragraph in Odorico et al
-        for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
-        {
-            for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
-            {
-                female_iterator->w[row_idx][col_idx] = 
-                    par.sd_init_strength_w * normal(rng_r);
-            }
-        }
-    }
-} // end initialize_population()
+    run();
+}
+
 
 // run the actual simulation
 void GRN_MatPat::run()
 {
     initialize_population();
+    write_data_headers();
 
     for (time_step = 0; 
-            time_step < par.max_time_step; ++time_step)
+            time_step <= par.max_time_step; ++time_step)
     {
+        develop();
         reproduce();
 
         // write out the data every nth generation
@@ -66,8 +35,75 @@ void GRN_MatPat::run()
             write_data();
         }
     } // end for
+
+    write_parameters();
 } // end run()
 
+// give each individual a random W matrix
+void GRN_MatPat::initialize_population()
+{
+    for (auto male_iterator{males.begin()}; 
+            male_iterator != males.end();
+            ++male_iterator)
+    {
+        // initialize for each individual the elements of w
+        // as per p689 2nd column 1st paragraph in Odorico et al
+        for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
+        {
+            for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
+            {
+                male_iterator->W[row_idx][col_idx] = 
+                    par.sd_init_strength_w * normal(rng_r);
+            }
+        }
+    }
+    
+    for (auto female_iterator{females.begin()}; 
+            female_iterator != females.end();
+            ++female_iterator)
+    {
+        // initialize for each individual the elements of w
+        // as per p689 2nd column 1st paragraph in Odorico et al
+        for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
+        {
+            for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
+            {
+                female_iterator->W[row_idx][col_idx] = 
+                    par.sd_init_strength_w * normal(rng_r);
+            }
+        }
+    }
+} // end initialize_population()
+
+
+// develop all the individuals from birth
+// until their gene expression levels equilibriate 
+// or until a maximum number of time steps is reached
+void GRN_MatPat::develop()
+{
+    for (auto male_iterator{males.begin()};
+            male_iterator != males.end();
+            ++male_iterator)
+    {
+        // update phenotypes during each developmental time step
+        for (unsigned time_idx{0}; 
+                time_idx < par.max_dev_time_step; 
+                ++time_idx)
+        {
+            male_iterator->update_phenotype(time_idx);
+        }
+    } 
+    
+    for (auto female_iterator{females.begin()};
+            female_iterator != females.end();
+            ++female_iterator)
+    {
+        for (unsigned time_idx{0}; time_idx < par.max_dev_time_step; ++time_idx)
+        {
+            female_iterator->update_phenotype(time_idx);
+        }
+    } 
+} // end GRN_MatPat::develop
 
 
 void GRN_MatPat::reproduce()
@@ -76,8 +112,11 @@ void GRN_MatPat::reproduce()
     juveniles.clear();
 
     std::vector <double> male_fitnesses{};
+
     // make fitness distribution of males
-    for (auto ind_iter{males.begin()}; ind_iter != males.end(); )
+    for (auto ind_iter{males.begin()}; 
+            ind_iter != males.end(); 
+            ++ind_iter)
     {
         male_fitnesses.push_back(ind_iter->fitness());
     }
@@ -92,8 +131,11 @@ void GRN_MatPat::reproduce()
 
     
     std::vector <double> female_fitnesses{};
+
     // make fitness distribution of males
-    for (auto ind_iter{females.begin()}; ind_iter != females.end(); )
+    for (auto ind_iter{females.begin()}; 
+            ind_iter != females.end();
+            ++ind_iter)
     {
         // if individual dies swap
         female_fitnesses.push_back(ind_iter->fitness());
@@ -167,6 +209,8 @@ void GRN_MatPat::write_data_headers()
 
         }
     }
+
+    data_file << std::endl;
 }// end write_data_headers()
 
 void GRN_MatPat::write_data()
@@ -257,7 +301,7 @@ void GRN_MatPat::write_data()
     unsigned nm{static_cast<unsigned>(males.size())};
 
     // begin the actual output
-    data_file << time_step << ";" << std::endl;
+    data_file << time_step << ";"; 
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
@@ -403,24 +447,29 @@ void GRN_MatPat::write_parameters()
         << "p_maternal;" << par.p_maternal << std::endl
         << "max_time_step;" << par.max_time_step << std::endl
         << "max_dev_time_step;" << par.max_dev_time_step << std::endl
-        << "max_dev_time_step_nstats;" << par.max_dev_time_step_nstats << std::endl
+        << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
         << "mu_w;" << par.mu_w << std::endl
-        << "mu_w;" << par.sdmu_w << std::endl;
+        << "mu_w;" << par.sdmu_w << std::endl
         << "sprime;" << par.sprime << std::endl;
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
-        data_file << "theta" << (row_idx + 1) << ";" << theta[row_idx] << std::endl;
-        data_file << "s" << (row_idx + 1) << ";" << s[row_idx] << std::endl;
+        data_file << "theta" << (row_idx + 1) << ";" << par.theta[row_idx] << std::endl;
+        data_file << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl;
     }
 
 } // end write_parameters
 
-// calculate canalization as 
-void GRN_MatPat::mean_genetic_canalization()
+// calculate genetic canalization by mutating individuals
+// and look at their phenotype development, see p690 1st col, 3rd para
+// in Odorico et al
+void GRN_MatPat::genetic_canalization()
 {
-    // ok randomly select one of the par.L^2 values of w_ij for 
-    // mutation
+    // each network has par.L^2 number of nodes of which we 
+    // need only one to mutate. Here we build a uniform sample distribution
+    // between 0 and (par.L^2 - 1) to sample the node that will be mutated
+    // later on we will then calculate a row and a column index for this number
+    // (see below)
     std::uniform_int_distribution<unsigned> node_sampler{0, par.L * par.L - 1};
 
     // generate 1000 clones with 1 mutation. I take it mutation works 
@@ -443,8 +492,20 @@ void GRN_MatPat::mean_genetic_canalization()
         // number               0 1 2 3 4 5 6 7 ... par.L - 1 
         // floor(number/L)      0 0 0 0 0 1 1 1 ... par.L - 1
         unsigned col_idx_to_mutate{node_sequential_id % par.L};
-        unsigned row_idx_to_mutate{std::floor(
-                static_cast<double>(node_sequential_id) / 6)};
+        unsigned row_idx_to_mutate{
+            static_cast<unsigned>(
+                        std::floor(
+                            static_cast<double>(
+                                node_sequential_id) / par.L
+                            )
+                        )
+                    };
+
+        assert(col_idx_to_mutate >= 0);
+        assert(col_idx_to_mutate < par.L);
+
+        assert(row_idx_to_mutate >= 0);
+        assert(row_idx_to_mutate < par.L);
 
         // first assign this individual the average W
         for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
@@ -454,11 +515,26 @@ void GRN_MatPat::mean_genetic_canalization()
                 clone.W[row_idx][col_idx] = meanW[row_idx][col_idx];
 
             }
+
+            // now perform development given an average S0
+            //
+            // because the mean phenotype is the same for males and females
+            // no need to focus on paternal vs maternal effects. However, 
+            // once we study sexual dimorphism, we can fully implement this
+            clone.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
+                + par.p_nongenetic * meanS[row_idx];
         }
        
         // then change one element by mutation
-        clone.W[row_idx_to_mutate][col_idx_to_mutate] += sdmu_w * normal(rng_r);
+        clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
 
-        // TODO: now remainder of canalization calculations
+        // TODO still have to implement development for real
+        for (unsigned dev_time_step_idx{0}; 
+                dev_time_step_idx < par.max_dev_time_step;
+                ++dev_time_step_idx)
+        {
+            clone.update_phenotype(dev_time_step_idx);
+        }
+
     }
 } // end mean_canalization 

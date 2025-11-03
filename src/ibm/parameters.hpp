@@ -8,7 +8,7 @@ class Parameters
 {
     public:
         // data is written to file each nth generation
-        unsigned data_output_interval{10};
+        unsigned data_output_interval{1};
 
         // population size
         unsigned N{1000};

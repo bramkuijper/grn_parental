@@ -44,8 +44,12 @@ class GRN_MatPat
 
         std::vector<Individual> juveniles;
 
-        // meanW for calculation of canalization
+        // we need to store the avarage value
+        // of meanW, not only for stats purposes 
+        // but also because of the calculation of canalization
         std::vector < std::vector < double > > meanW;
+
+        std::vector < double > meanS;
 
     public:
         // the constructor of the simulation
@@ -55,12 +59,14 @@ class GRN_MatPat
         void run();
 
         void initialize_population();
+        void develop();
         void reproduce();
         void write_data();
         void write_data_headers();
         void write_out_all_individuals();
         void write_parameters();
         void write_out_all_individuals_headers();
+        void genetic_canalization();
 };
 
 #endif
