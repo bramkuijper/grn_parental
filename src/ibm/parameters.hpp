@@ -13,6 +13,7 @@ class Parameters
         // population size
         unsigned N{1000};
 
+        // population size when samlping individuals for the sake of canalization
         unsigned N_canalize{1000};
 
         // number of genes in network

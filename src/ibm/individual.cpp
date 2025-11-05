@@ -164,6 +164,7 @@ void Individual::average_phenotype()
     } // end for s_idx
 } // end function average phenotype
 
+// development of an individual over a single time step
 void Individual::update_phenotype(
         unsigned const dev_time_step)
 {
