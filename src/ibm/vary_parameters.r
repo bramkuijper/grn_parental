@@ -31,6 +31,16 @@ counter <- 0
 
 exe = "./gene_network_matpat.exe"
 
+
+# 2 out of L values are having stabilizing selection
+# for which s > 0
+# see Odorico et al p 690, 1st col, final para
+s_values <- numeric(length=L[[1]])
+
+# set the first and the last one to nonzero values
+s_values[[1]] <- 0.5
+s_values[[L[[1]]]] <- 0.5
+
 batch_file_contents <- ""
 
 for (rep_i in 1:nrep)
@@ -61,6 +71,7 @@ for (rep_i in 1:nrep)
                                     p_nongenetic_i,
                                     p_maternal_i,
                                     dev_time_i,
+                                    paste(s_values, collapse=" "),
                                     file_name_i,
                                     file_name_individuals_i)
 
