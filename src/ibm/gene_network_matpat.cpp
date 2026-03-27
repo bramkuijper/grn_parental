@@ -3,6 +3,12 @@
 #include "individual.hpp"
 #include "gene_network_matpat.hpp"
 
+//TODO:calculate time to stability
+//TODO:finalize canalisation stats
+//TODO:offspring size, have size affect the selective optimum
+//then we have three channels: genes, RNA, size
+//remaining channel: epigenetics
+
 GRN_MatPat::GRN_MatPat(Parameters const &par) :
     rd{},
     seed{rd()},
@@ -492,12 +498,13 @@ void GRN_MatPat::genetic_canalization()
         // find the column and the row that belongs to this value
         // use modulo operator to get column, as: 
         // number               0 1 2 3 4 5 6 7 ... par.L - 1 
-        // number % par.L       0 1 2 3 4 0 1 2 ... par.L - 1
+        // number % par.L       0 1 2 3 4 5 0 1 ... par.L - 1
         //
         // we use floor of number / L to get the row
         // number               0 1 2 3 4 5 6 7 ... par.L - 1 
         // floor(number/L)      0 0 0 0 0 1 1 1 ... par.L - 1
         unsigned col_idx_to_mutate{node_sequential_id % par.L};
+
         unsigned row_idx_to_mutate{
             static_cast<unsigned>(
                         std::floor(
@@ -534,13 +541,19 @@ void GRN_MatPat::genetic_canalization()
         // then change one element by mutation
         clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
 
-        // TODO still have to implement development for real
+        // development, yay
         for (unsigned dev_time_step_idx{0}; 
                 dev_time_step_idx < par.max_dev_time_step;
                 ++dev_time_step_idx)
         {
             clone.update_phenotype(dev_time_step_idx);
         }
+
+        // how stable is that fucking clone
+        //
+
+
+        // we need to count how many of our clones are not stable
 
     }
 } // end mean_canalization 

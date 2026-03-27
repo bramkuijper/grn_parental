@@ -82,7 +82,7 @@ class Parameters
         std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
         Parameters() :
-            theta(L, 0.0), // initialize all the values for theta
+            theta(L, 1.0), // initialize all the values for theta
             s(L, 0.0) // initialize all the values for s
         {}
 };
