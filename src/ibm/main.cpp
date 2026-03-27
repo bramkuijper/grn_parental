@@ -4,10 +4,10 @@
 
 int main(int argc, char **argv)
 {
-    Parameters pars;
+    int Lval = std::stoi(argv[2]);
+    Parameters pars(Lval);
 
     pars.max_time_step = std::stoi(argv[1]);
-    pars.L = std::stoi(argv[2]);
     pars.p_nongenetic = std::stod(argv[3]);
     pars.p_maternal = std::stod(argv[4]);
     pars.max_dev_time_step = std::stoi(argv[5]);

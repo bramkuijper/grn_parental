@@ -1,6 +1,5 @@
 #include <vector>
 #include <random>
-#include <iostream>
 #include <cassert>
 #include "individual.hpp"
 
@@ -105,7 +104,7 @@ double Individual::fitness()
             -pars.sprime * V[s_idx];  
     }
 
-    return(std::exp(exponent));
+    return(pars.baseline_fitness + std::exp(exponent));
 } // end fitness()
 
 void Individual::average_phenotype()

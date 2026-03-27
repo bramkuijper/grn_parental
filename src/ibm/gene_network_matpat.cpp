@@ -35,6 +35,7 @@ void GRN_MatPat::run()
             time_step <= par.max_time_step; ++time_step)
     {
         develop();
+        reproduce();
 	
 //	write_out_all_individuals_headers();
 //	write_out_all_individuals();
@@ -47,7 +48,6 @@ void GRN_MatPat::run()
             write_data();
         }
 
-        reproduce();
 
     } // end for
 
@@ -142,6 +142,8 @@ void GRN_MatPat::reproduce()
     {
         male_fitnesses.push_back(ind_iter->fitness());
     }
+
+    assert(male_fitnesses.size() >= 1);
 
     // set up fitness distributions for males
     // so that those individuals with larger 
