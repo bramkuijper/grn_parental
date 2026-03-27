@@ -1,5 +1,6 @@
 #include <vector>
 #include <cassert>
+#include <iostream>
 #include "individual.hpp"
 #include "gene_network_matpat.hpp"
 
@@ -28,13 +29,20 @@ void GRN_MatPat::run()
             time_step <= par.max_time_step; ++time_step)
     {
         develop();
-        reproduce();
+	
+//	write_out_all_individuals_headers();
+//	write_out_all_individuals();
+	
+//	exit(1);
 
         // write out the data every nth generation
         if (time_step % par.data_output_interval == 0)
         {
             write_data();
         }
+
+        reproduce();
+
     } // end for
 
     write_parameters();
@@ -93,7 +101,10 @@ void GRN_MatPat::develop()
         {
             male_iterator->update_phenotype(time_idx);
         }
+
+	male_iterator->average_phenotype();
     } 
+
     
     for (auto female_iterator{females.begin()};
             female_iterator != females.end();
@@ -103,6 +114,7 @@ void GRN_MatPat::develop()
         {
             female_iterator->update_phenotype(time_idx);
         }
+	female_iterator->average_phenotype();
     } 
 } // end GRN_MatPat::develop
 

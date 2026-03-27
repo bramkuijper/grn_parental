@@ -8,8 +8,8 @@
 Individual::Individual(Parameters const &par) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
-    S(par.max_dev_time_step, std::vector< double >(par.L) ),
-    Sbar(par.L, 0.0),
+    S(par.max_dev_time_step, std::vector< double >(par.L, par.a) ),
+    Sbar(par.L, par.a),
     V(par.L,0.0)
 {} // end Individual() initialization constructor
 
@@ -95,8 +95,6 @@ void Individual::operator=(Individual const &other)
 // calculate omega_s as in Odorico eq. (4)
 double Individual::fitness()
 {
-    average_phenotype();
-
     double exponent{0.0};
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
@@ -190,6 +188,7 @@ void Individual::update_phenotype(
                     W[row_idx][col_idx] * S[dev_time_step - 1][col_idx],
                     pars.a
                     );
+//		std::cout << dev_time_step << " " << S[dev_time_step][row_idx] << " " << S[dev_time_step - 1][col_idx] << std::endl;
         } // end for col_idx
     } // end for row_idx
 } // update_phenotype()

@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 
 # number of replicates
-nrep <- 3
+nrep <- 20
 
 # maximum amount of generations a simulation runs
-maxgen <- 50000
+maxgen <-10000
 
 # the number of phenotypes, L
 # note that the GRN is size L*L
@@ -13,7 +13,7 @@ L <- c(6)
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
 
-p_maternal <- c(0.5)
+p_maternal <- c(0.0)
 
 # number of time steps before development is completed
 dev_time <- c(4)

@@ -11,7 +11,7 @@ class Parameters
         unsigned data_output_interval{1};
 
         // population size
-        unsigned N{1000};
+        unsigned N{5000};
 
         // population size when samlping individuals for the sake of canalization
         unsigned N_canalize{1000};
