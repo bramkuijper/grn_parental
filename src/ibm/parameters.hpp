@@ -77,15 +77,15 @@ class Parameters
         // strength of selection on variance 
         // of gene expression
         // see Odorico et al. eq (4)
-        double sprime{46000.0};
+        double sprime{0.0};
 
         std::string file_name{"grn_simulation.csv"};
         std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
-        Parameters(int const Lval) : 
+        Parameters(unsigned const Lval, double const a) : 
             L(Lval),
-            theta(L, 1.0), // initialize all the values for theta
-            s(L, 0.0) // initialize all the values for s
+            theta(L, a), // initialize all the values for theta
+            s(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}
 };
 

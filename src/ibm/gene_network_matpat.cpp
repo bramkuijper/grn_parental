@@ -31,23 +31,21 @@ void GRN_MatPat::run()
     initialize_population();
     write_data_headers();
 
+    write_out_all_individuals_headers();
     for (time_step = 0; 
             time_step <= par.max_time_step; ++time_step)
     {
         develop();
-        reproduce();
+        write_out_all_individuals();
 	
-//	write_out_all_individuals_headers();
-//	write_out_all_individuals();
 	
-//	exit(1);
-
         // write out the data every nth generation
         if (time_step % par.data_output_interval == 0)
         {
             write_data();
         }
 
+        reproduce();
 
     } // end for
 
@@ -391,6 +389,9 @@ void GRN_MatPat::write_out_all_individuals_headers()
 }
 
 // for inspection purposes, write out all individuals
+// if one wants to obtain information about the development of phenotypes
+// then make sure to call this after development(), rather than
+// after reproduce()
 void GRN_MatPat::write_out_all_individuals()
 {
     unsigned individual_idx{0};

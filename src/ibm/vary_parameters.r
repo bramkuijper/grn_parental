@@ -10,6 +10,8 @@ maxgen <-10000
 # note that the GRN is size L*L
 L <- c(6)
 
+a <- 0.2
+
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
 
@@ -68,6 +70,7 @@ for (rep_i in 1:nrep)
                     command_str <- paste(exe,
                                     maxgen,
                                     L_i,
+                                    a,
                                     p_nongenetic_i,
                                     p_maternal_i,
                                     dev_time_i,
