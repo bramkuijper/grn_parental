@@ -82,9 +82,9 @@ class Parameters
         std::string file_name{"grn_simulation.csv"};
         std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
-        Parameters(unsigned const Lval, double const a) : 
+        Parameters(unsigned const Lval, double const theta) : 
             L(Lval),
-            theta(L, a), // initialize all the values for theta
+            theta(L, theta), // initialize all the values for theta
             s(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}
 };

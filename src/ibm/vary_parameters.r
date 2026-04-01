@@ -1,16 +1,21 @@
 #!/usr/bin/env Rscript
 
 # number of replicates
-nrep <- 20
+nrep <- 10
 
 # maximum amount of generations a simulation runs
 maxgen <-10000
+
+# output interval in the data file, i.e., 
+# how many timesteps until the next statistics are written out
+output_interval <- 1
 
 # the number of phenotypes, L
 # note that the GRN is size L*L
 L <- c(6)
 
 a <- 0.2
+theta <- 0.5
 
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
@@ -37,11 +42,16 @@ exe = "./gene_network_matpat.exe"
 # 2 out of L values are having stabilizing selection
 # for which s > 0
 # see Odorico et al p 690, 1st col, final para
+
+# first allocate 0-filled vector of s values
 s_values <- numeric(length=L[[1]])
 
 # set the first and the last one to nonzero values
-s_values[[1]] <- 0.5
-s_values[[L[[1]]]] <- 0.5
+s_values[[1]] <- 10
+s_values[[L[[1]]]] <- 10
+
+# selection on developmental stability
+sprime <- 0
 
 batch_file_contents <- ""
 
@@ -68,13 +78,15 @@ for (rep_i in 1:nrep)
                     echo_str <- paste("echo",counter)
 
                     command_str <- paste(exe,
-                                    maxgen,
                                     L_i,
-                                    a,
+                                    theta,
+                                    maxgen,
                                     p_nongenetic_i,
                                     p_maternal_i,
                                     dev_time_i,
                                     paste(s_values, collapse=" "),
+                                    sprime,
+                                    output_interval,
                                     file_name_i,
                                     file_name_individuals_i)
 
