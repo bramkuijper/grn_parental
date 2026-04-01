@@ -1,6 +1,5 @@
 #include <vector>
 #include <random>
-#include <iostream>
 #include <cassert>
 #include "individual.hpp"
 
@@ -8,10 +7,16 @@
 Individual::Individual(Parameters const &par) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
-    S(par.max_dev_time_step, std::vector< double >(par.L, par.a) ),
+    S(par.max_dev_time_step, std::vector< double >(par.L, 0.0) ),
     Sbar(par.L, par.a),
     V(par.L,0.0)
-{} // end Individual() initialization constructor
+{
+    // initialize S_{t=0} with the value a
+    for (unsigned trait_idx{0}; trait_idx < par.L; ++trait_idx)
+    {
+        S[0][trait_idx] = par.a;
+    }
+} // end Individual() initialization constructor
 
 
 // how you build an individual from another one
@@ -105,14 +110,16 @@ double Individual::fitness()
             -pars.sprime * V[s_idx];  
     }
 
-    return(std::exp(exponent));
+    return(pars.baseline_fitness + std::exp(exponent));
 } // end fitness()
 
+// calculate the average phenotype over a given time span
 void Individual::average_phenotype()
 {
     // empty vector for the averages over time 
     // for each of the traits
     std::fill(Sbar.begin(),Sbar.end(), 0.0);
+
     // empty vector for the variances over time 
     // for each of the traits
     std::fill(V.begin(),V.end(), 0.0);
@@ -178,7 +185,7 @@ void Individual::update_phenotype(
     // and then time steps for stats
     //
     // S(t+1) vector, all set to 0
-    std::vector<double> Stplus1(pars.L, 0.0);
+    //std::vector<double> Stplus1(pars.L, 0.0);
 
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {

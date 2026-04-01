@@ -72,18 +72,20 @@ class Parameters
         // we can turn off selection on specific traits
         std::vector <double> s;
 
+        double baseline_fitness{1.0};
 
         // strength of selection on variance 
         // of gene expression
         // see Odorico et al. eq (4)
-        double sprime{46000.0};
+        double sprime{0.0};
 
         std::string file_name{"grn_simulation.csv"};
         std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
-        Parameters() :
-            theta(L, 1.0), // initialize all the values for theta
-            s(L, 0.0) // initialize all the values for s
+        Parameters(unsigned const Lval, double const theta) : 
+            L(Lval),
+            theta(L, theta), // initialize all the values for theta
+            s(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}
 };
 
