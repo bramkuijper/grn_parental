@@ -77,15 +77,17 @@ class Parameters
         // strength of selection on variance 
         // of gene expression
         // see Odorico et al. eq (4)
-        double sprime{0.0};
+        // apparently this is locus specific
+        std::vector <double> sprime;
 
         std::string file_name{"grn_simulation.csv"};
         std::string file_name_individuals{"grn_simulation_individuals.csv"};
 
-        Parameters(unsigned const Lval, double const theta) : 
+        Parameters(unsigned const Lval) : 
             L(Lval),
-            theta(L, theta), // initialize all the values for theta
-            s(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
+            theta(L, 0.0), // initialize all the values for theta
+            s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)
+            sprime(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}
 };
 

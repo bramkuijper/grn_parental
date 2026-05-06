@@ -4,28 +4,35 @@
 
 int main(int argc, char **argv)
 {
+    size_t argv_idx{1};
     // we always first need to retrieve the number of loci
     // with which we can instantiate the parameter object
-    unsigned Lval = static_cast<unsigned>(std::stoi(argv[1]));
-    double theta = std::stod(argv[2]);
-    Parameters pars(Lval, theta);
+    unsigned Lval = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
+    Parameters pars(Lval);
 
-    pars.max_time_step = static_cast<unsigned>(std::stoi(argv[3]));
-    pars.p_nongenetic = std::stod(argv[4]);
-    pars.p_maternal = std::stod(argv[5]);
-    pars.max_dev_time_step = static_cast<unsigned>(std::stoi(argv[6]));
+    for (size_t theta_idx{0}; theta_idx < pars.L; ++theta_idx)
+    {
+        pars.theta[theta_idx] = std::stod(argv[argv_idx++]);
+    }
 
-    size_t argv_last{7};
+    pars.max_time_step = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
+    pars.p_nongenetic = std::stod(argv[argv_idx++]);
+    pars.p_maternal = std::stod(argv[argv_idx++]);
+    pars.max_dev_time_step = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
 
     for (size_t s_idx{0}; s_idx < pars.L; ++s_idx)
     {
-        pars.s[s_idx] = std::stod(argv[argv_last + s_idx]);
+        pars.s[s_idx] = std::stod(argv[argv_idx++]);
+    }
+    
+    for (size_t s_idx{0}; s_idx < pars.L; ++s_idx)
+    {
+        pars.sprime[s_idx] = std::stod(argv[argv_idx++]);
     }
 
-    pars.sprime = std::stod(argv[argv_last + pars.L]);
-    pars.data_output_interval = static_cast<unsigned>(std::stoi(argv[argv_last + pars.L + 1]));
-    pars.file_name = argv[argv_last + pars.L + 2];
-    pars.file_name_individuals = argv[argv_last + pars.L + 3];
+    pars.data_output_interval = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
+    pars.file_name = argv[argv_idx++];
+    pars.file_name_individuals = argv[argv_idx++];
 
     GRN_MatPat Simulation(pars);
 

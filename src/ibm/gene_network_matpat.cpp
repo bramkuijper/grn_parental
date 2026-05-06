@@ -36,7 +36,7 @@ void GRN_MatPat::run()
             time_step <= par.max_time_step; ++time_step)
     {
         develop();
-        write_out_all_individuals();
+//        write_out_all_individuals();
 	
 	
         // write out the data every nth generation
@@ -476,13 +476,13 @@ void GRN_MatPat::write_parameters()
         << "max_dev_time_step;" << par.max_dev_time_step << std::endl
         << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
         << "mu_w;" << par.mu_w << std::endl
-        << "mu_w;" << par.sdmu_w << std::endl
-        << "sprime;" << par.sprime << std::endl;
+        << "mu_w;" << par.sdmu_w << std::endl;
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
         data_file << "theta" << (row_idx + 1) << ";" << par.theta[row_idx] << std::endl;
         data_file << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl;
+        data_file << "sprime" << (row_idx + 1) << ";" << par.sprime[row_idx] << std::endl;
     }
 
 } // end write_parameters

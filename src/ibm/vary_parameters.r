@@ -4,7 +4,7 @@
 nrep <- 10
 
 # maximum amount of generations a simulation runs
-maxgen <-10000
+maxgen <- 100
 
 # output interval in the data file, i.e., 
 # how many timesteps until the next statistics are written out
@@ -12,10 +12,21 @@ output_interval <- 1
 
 # the number of phenotypes, L
 # note that the GRN is size L*L
-L <- c(6)
+L <- 6
 
+# expression in the absence of positive
+# or negative regulation on gene expression
 a <- 0.2
-theta <- 0.5
+
+# see eq. (4)  in Odorico et al for values of theta
+# the first two are given nonnegative values, the other 
+# loci stabilize around 0 (if they are under selection at all,
+# see the s vector) 
+theta <- numeric(length = L)
+
+# see Odorico et al Fig S3 for parameter values
+theta[1] <- 0.33
+theta[2] <- 2*theta[1]
 
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
@@ -38,68 +49,94 @@ counter <- 0
 
 exe = "./gene_network_matpat.exe"
 
-
 # 2 out of L values are having stabilizing selection
 # for which s > 0
 # see Odorico et al p 690, 1st col, final para
 
 # first allocate 0-filled vector of s values
-s_values <- numeric(length=L[[1]])
+s_values <- numeric(length=L)
 
-# set the first and the last one to nonzero values
-s_values[[1]] <- 10
-s_values[[L[[1]]]] <- 10
+# set the first and the second one to nonzero values
+s_values[1:2] <- 10
 
 # selection on developmental stability
-sprime <- 0
+# of each of the loci 
+sprime <- numeric(length = L)
+sprime[1:2] <- 46*10^3
 
 batch_file_contents <- ""
 
+command_str <- paste("#",
+                     exe,
+                     "L",
+                     "theta",
+                     "\t",
+                     "maxgen",
+                     "\t",
+                     "pn,pm",
+                     "dev_time",
+                     "s",
+                     "\t",
+                     "sprime",
+                     "\t",
+                     "file",
+                     "file_individuals")
+
+batch_file_contents <- command_str
+
+# now vary all the possible combinations
+# and see what happens
 for (rep_i in 1:nrep)
 {
-    for (L_i in L)
-    {
-        for (p_nongenetic_i in p_nongenetic)
-        {
-            for (p_maternal_i in p_maternal)
-            {
-                for (dev_time_i in dev_time)
-                {
-                    counter <- counter + 1
-                    file_name_i <- paste0(
-                            output_file_prefix,"_",counter)
+      for (p_nongenetic_i in p_nongenetic)
+      {
+          for (p_maternal_i in p_maternal)
+          {
+              for (dev_time_i in dev_time)
+              {
+                  counter <- counter + 1
+                  
+                  # dynamically generate a filename
+                  # for this particular parameter combination
+                  file_name_i <- paste0(
+                          output_file_prefix,"_",counter)
 
-                    file_name_individuals_i <- paste0(
-                            output_file_prefix,"_individuals_",counter)
+                  file_name_individuals_i <- paste0(
+                          output_file_prefix,"_individuals_",counter)
 
-                    # add a line that spits out a number to the screen
-                    # to inform the user how many simulations have been
-                    # processed
-                    echo_str <- paste("echo",counter)
+                  # add a line that spits out a number to the screen
+                  # to inform the user how many simulations have been
+                  # processed
+                  echo_str <- paste("echo",counter)
+                  
+                  command_str <- paste(exe,
+                                  L,
+                                  "\t",
+                                  paste(theta, collapse=" "),
+                                  "\t",
+                                  maxgen,
+                                  "\t",
+                                  p_nongenetic_i,
+                                  p_maternal_i,
+                                  "\t",
+                                  dev_time_i,
+                                  paste(s_values, collapse=" "),
+                                  "\t",
+                                  paste(sprime,collapse=" "),
+                                  "\t",
+                                  output_interval,
+                                  file_name_i,
+                                  file_name_individuals_i)
 
-                    command_str <- paste(exe,
-                                    L_i,
-                                    theta,
-                                    maxgen,
-                                    p_nongenetic_i,
-                                    p_maternal_i,
-                                    dev_time_i,
-                                    paste(s_values, collapse=" "),
-                                    sprime,
-                                    output_interval,
-                                    file_name_i,
-                                    file_name_individuals_i)
-
-                    # append to batch file contents
-                    batch_file_contents <- paste0(batch_file_contents
-                            ,"\n"
-                            ,echo_str
-                            ,"\n"
-                            ,command_str)
-                }
-            } # end dev_time
-      } # end p_nongenetic_i
-    } # end L_i 
+                  # append to batch file contents
+                  batch_file_contents <- paste0(batch_file_contents
+                          ,"\n"
+                          ,echo_str
+                          ,"\n"
+                          ,command_str)
+              }
+          } # end dev_time
+    } # end p_nongenetic_i
 } # end for loop
 
 writeLines(text=batch_file_contents)

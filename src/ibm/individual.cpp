@@ -107,7 +107,7 @@ double Individual::fitness()
         // the power function pow() slower than actually just squaring things
         exponent += -pars.s[s_idx] * (Sbar[s_idx] - pars.theta[s_idx]) * 
             (Sbar[s_idx] - pars.theta[s_idx])
-            -pars.sprime * V[s_idx];  
+            -pars.sprime[s_idx] * V[s_idx];  
     }
 
     return(pars.baseline_fitness + std::exp(exponent));
