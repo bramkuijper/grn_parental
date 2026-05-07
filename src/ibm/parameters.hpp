@@ -52,16 +52,22 @@ class Parameters
         unsigned max_dev_time_step{10};
 
         // number of developmental time steps
-        // recorded for stats. These are the final
+        // recorded for stats from time T backwards. 
+        // These are the final
         // n time steps before development has been
         // completed.
-        unsigned max_dev_time_step_stats{4};
+        // this parameter is used to calculate
+        // the values of Sbar_i (mean gene expression for locus i) 
+        // and V_i (the variance of gene expression)
+        //
+        // a value of 1 is basically the current value
+        unsigned max_dev_time_step_stats{2};
 
         // mutation rate of W matrix entries
-        double mu_w{0.02};
+        double mu_w{0.01};
         
         // standard deviation of W matrix entries
-        double sdmu_w{0.02};
+        double sdmu_w{0.5};
 
         // optimum for each locus
         std::vector <double> theta;

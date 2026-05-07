@@ -7,6 +7,7 @@
 Individual::Individual(Parameters const &par) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
+    // S[t_i][j] // gene expression of locus j at time 0 <= t_i < max_dev_time_step
     S(par.max_dev_time_step, std::vector< double >(par.L, 0.0) ),
     Sbar(par.L, par.a),
     V(par.L,0.0)
@@ -58,7 +59,7 @@ Individual::Individual(Individual const &mom,
                 mom.W[row_idx][col_idx];
 
             // mutate the allele after inheritance
-            if (uniform(rng_r) < pars.mu_w)
+            if (uniform(rng_r) < pars.mu_w / pars.L)
             {
                 W[row_idx][col_idx] += standard_normal(rng_r) * pars.sdmu_w;
             }
@@ -130,13 +131,14 @@ void Individual::average_phenotype()
     // the end of the S vector (as we only want to average over
     // the final values of S towards the end of development, not
     // necessarily the earlier values of S during early development)
-    for (unsigned t_prior{pars.max_dev_time_step -
-            pars.max_dev_time_step_stats}; 
+    for (unsigned t_prior{pars.max_dev_time_step - pars.max_dev_time_step_stats}; 
             t_prior < pars.max_dev_time_step; 
             ++t_prior)
     {
         // some boundary checking
         assert(t_prior >= 0);
+
+        // remember that the f
         assert(t_prior < S.size());
         assert(S[0].size() == pars.L);
 

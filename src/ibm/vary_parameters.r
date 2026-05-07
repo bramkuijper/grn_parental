@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 
 # number of replicates
-nrep <- 10
+nrep <- 3
 
 # maximum amount of generations a simulation runs
-maxgen <- 100
+maxgen <- 10000
 
 # output interval in the data file, i.e., 
 # how many timesteps until the next statistics are written out
-output_interval <- 1
+output_interval <- 10
 
 # the number of phenotypes, L
 # note that the GRN is size L*L
@@ -62,7 +62,7 @@ s_values[1:2] <- 10
 # selection on developmental stability
 # of each of the loci 
 sprime <- numeric(length = L)
-sprime[1:2] <- 46*10^3
+sprime[1:2] <- 1000
 
 batch_file_contents <- ""
 
