@@ -218,16 +218,18 @@ void GRN_MatPat::reproduce()
 // give the column headers to the data file
 void GRN_MatPat::write_data_headers()
 {
-    data_file << "time;";
+    data_file << "time;"
+            << "fitness" << ";"
+            << "varfitness" << ";"
+            << "distance_optimum" << ";"
+            << "var_distance_optimum" << ";";
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
         data_file << "sbar" << (row_idx + 1) << ";"
             << "varsbar" << (row_idx + 1) << ";"
             << "v" << (row_idx + 1) << ";"
-            << "varv" << (row_idx + 1) << ";"
-            << "distance_optimum" << (row_idx + 1) << ";"
-            << "fitness" << (row_idx + 1) << ";";
+            << "varv" << (row_idx + 1) << ";";
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -252,12 +254,12 @@ void GRN_MatPat::write_data()
     std::vector < double > varV(par.L, 0.0); 
 
     // parameters for mean fitness and variance in fitness
-    double meanw{0.0};
-    double varw{0.0};
+    double mean_fitness{0.0};
+    double var_fitness{0.0};
     
     // parameters for distance and variance in distance from optimum 
-    double meandistance{0.0};
-    double vardistance{0.0};
+    double mean_distance{0.0};
+    double var_distance{0.0};
 
     // set all elements of the 2d matrix to store 
     // the population stats for W to 0
@@ -276,6 +278,11 @@ void GRN_MatPat::write_data()
         varW(par.L, std::vector< double >(par.L, 0.0));
 
     double x;  // aux variable to temporarily store each trait value
+
+    // make variables for numbers of individuals
+    // rather than having to call .size() umpteen times
+    unsigned nf{static_cast<unsigned>(females.size())};
+    unsigned nm{static_cast<unsigned>(males.size())};
     
     // first go over all males
     for (auto male_iterator{males.begin()}; male_iterator != males.end();
@@ -299,17 +306,17 @@ void GRN_MatPat::write_data()
                 meanW[row_idx][col_idx] += x;
                 varW[row_idx][col_idx] += x*x;
             }
-
-            x = male_iterator->fitness();
-            meanw += x;
-            varw += x;
-
-            x = male_iterator->mean_distance_to_optimum();
-            meandistance += x;
-            vardistance += x;
         }
+
+        x = male_iterator->fitness();
+        mean_fitness += x;
+        var_fitness += x*x;
+        
+        x = male_iterator->mean_distance_to_optimum();
+        mean_distance += x;
+        var_distance += x*x;
     } // end for male_iterator
-    
+
     for (auto female_iterator{females.begin()}; female_iterator != females.end();
             ++female_iterator)
     {
@@ -333,24 +340,28 @@ void GRN_MatPat::write_data()
                 meanW[row_idx][col_idx] += x;
                 varW[row_idx][col_idx] += x*x;
             }
-            
-            x = female_iterator->fitness();
-            meanw += x;
-            varw += x;
-
-            x = female_iterator->mean_distance_to_optimum();
-            meandistance += x;
-            vardistance += x;
         }
-    } // end for female_iterator
+        x = female_iterator->fitness();
+        mean_fitness += x;
+        var_fitness += x*x;
 
-    // make variables for numbers of individuals
-    // rather than having to call .size() umpteen times
-    unsigned nf{static_cast<unsigned>(females.size())};
-    unsigned nm{static_cast<unsigned>(males.size())};
+        x = female_iterator->mean_distance_to_optimum();
+        mean_distance += x;
+        var_distance += x * x;
+    } // end for female_iterator
 
     // begin the actual output
     data_file << time_step << ";"; 
+    mean_fitness /= nf + nm;
+    var_fitness = var_fitness / (nf + nm) - mean_fitness * mean_fitness;
+    
+    mean_distance /= (nf + nm);
+    var_distance = var_distance / (nf + nm) - mean_distance * mean_distance;
+
+    data_file << mean_fitness << ";" 
+        << var_fitness << ";"
+        << mean_distance << ";"
+        << var_distance << ";"; 
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
@@ -378,16 +389,6 @@ void GRN_MatPat::write_data()
         }
     }
 
-    meanw /= (nf + nm);
-    varw = varw / (nf + nm) - meanw * meanw;
-    
-    meandistance /= (nf + nm);
-    vardistance = vardistance / (nf + nm) - meandistance * meandistance;
-
-    data_file << meanw << ";" 
-        << varw << ";"
-        << meandistance << ";"
-        << vardistance << ";" << std::endl;
 
     // finish  by starting a new line
     data_file << std::endl;
