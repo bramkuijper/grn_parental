@@ -65,7 +65,7 @@ class Parameters
 
         // mutation rate of W matrix entries
         double mu_w{0.01};
-        
+       
         // standard deviation of W matrix entries
         double sdmu_w{0.5};
 
