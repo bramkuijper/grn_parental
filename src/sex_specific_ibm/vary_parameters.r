@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # number of replicates
-nrep <- 3
+nrep <- 20
 
 # maximum amount of generations a simulation runs
 maxgen <- 10000
@@ -31,7 +31,7 @@ theta[2] <- 2*theta[1]
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
 
-p_maternal <- c(0.0)
+p_maternal <- c(0.25)
 
 # number of time steps before development is completed
 dev_time <- c(24)
