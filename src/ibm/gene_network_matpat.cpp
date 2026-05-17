@@ -263,8 +263,9 @@ void GRN_MatPat::write_data()
 
     // set all elements of the 2d matrix to store 
     // the population stats for W to 0
-    // we keep meanW global as we also use it to calculate 
-    // canalization
+    // we need to keep meanW global 
+    // as we also use it to calculate 
+    // canalization of the average W matrix
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
@@ -523,6 +524,9 @@ void GRN_MatPat::write_parameters()
 
 } // end write_parameters
 
+Individual GRN_MatPat::make_reference_individual()
+{
+
 // calculate genetic canalization by mutating individuals
 // and look at their phenotype development, see p690 1st col, 3rd para
 // in Odorico et al
@@ -534,6 +538,26 @@ void GRN_MatPat::genetic_canalization()
     // later on we will then calculate a row and a column index for this number
     // (see below)
     std::uniform_int_distribution<unsigned> node_sampler{0, par.L * par.L - 1};
+
+    // make a reference individual
+    Individual reference_individual(par);
+
+    reference_individual.W = meanW;
+    
+    // first assign this individual the average W
+    for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
+    {
+        // now perform development given an average S0
+        //
+        // because the mean phenotype is the same for males and females
+        // no need to focus on paternal vs maternal effects. However, 
+        // once we study sexual dimorphism, we can fully implement this
+        clone.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
+            + par.p_nongenetic * meanS[row_idx];
+    }
+
+    assert(reference_individual.W[par.L - 1][1] == meanW[par.L - 1][1]);
+    assert(reference_individual.W[0][par.L - 1] == meanW[0][par.L - 1]);
 
     // generate 1000 clones with 1 mutation. I take it mutation works 
     // by simply changing one of the wij's by mutation
@@ -548,7 +572,7 @@ void GRN_MatPat::genetic_canalization()
 
         // find the column and the row that belongs to this value
         // use modulo operator to get column, as: 
-        // number               0 1 2 3 4 5 6 7 ... par.L - 1 
+        // number               0 1 2 3 4 5 6 7 ... par.L^2 - 1 
         // number % par.L       0 1 2 3 4 5 0 1 ... par.L - 1
         //
         // we use floor of number / L to get the row
@@ -565,21 +589,20 @@ void GRN_MatPat::genetic_canalization()
                         )
                     };
 
+        // do bounds checking on the col and row
+        // of the element that is selected for mutation
         assert(col_idx_to_mutate >= 0);
         assert(col_idx_to_mutate < par.L);
 
         assert(row_idx_to_mutate >= 0);
         assert(row_idx_to_mutate < par.L);
 
+        // assign all the weights
+        clone.W = meanW;
+
         // first assign this individual the average W
         for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
         {
-            for (unsigned int col_idx{0}; col_idx < par.L; ++col_idx)
-            {
-                clone.W[row_idx][col_idx] = meanW[row_idx][col_idx];
-
-            }
-
             // now perform development given an average S0
             //
             // because the mean phenotype is the same for males and females
@@ -599,12 +622,6 @@ void GRN_MatPat::genetic_canalization()
         {
             clone.update_phenotype(dev_time_step_idx);
         }
-
-        // how stable is that fucking clone
-        //
-
-
-        // we need to count how many of our clones are not stable
 
     }
 } // end mean_canalization 
