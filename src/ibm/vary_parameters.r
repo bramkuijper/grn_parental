@@ -29,9 +29,9 @@ theta[1] <- 0.33
 theta[2] <- 2*theta[1]
 
 # fraction of phenotype that is nongenetically inherited
-p_nongenetic <- c(0.0)
+p_nongenetic <- seq(0,1,0.1)
 
-p_maternal <- c(0.0)
+p_maternal <- seq(0,1,0.1)
 
 # number of time steps before development is completed
 dev_time <- c(24)
@@ -57,12 +57,12 @@ exe = "./gene_network_matpat.exe"
 s_values <- numeric(length=L)
 
 # set the first and the second one to nonzero values
-s_values[1:2] <- 10
+s_values[1:6] <- 10
 
 # selection on developmental stability
 # of each of the loci 
 sprime <- numeric(length = L)
-sprime[1:2] <- 1000
+sprime[1:6] <- 1000
 
 batch_file_contents <- ""
 
@@ -90,7 +90,16 @@ for (rep_i in 1:nrep)
 {
       for (p_nongenetic_i in p_nongenetic)
       {
-          for (p_maternal_i in p_maternal)
+	      p_maternal_x <- p_maternal
+	      # if p_nongenetic is 0 no need
+	      # to vary over all p_maternal combinations
+	      # as there is no nongenetic effect anywayz
+	      if (p_nongenetic_i == 0.0)
+	      {
+		      p_maternal_x <- c(0.0)
+	      }
+
+          for (p_maternal_i in p_maternal_x)
           {
               for (dev_time_i in dev_time)
               {
@@ -140,3 +149,5 @@ for (rep_i in 1:nrep)
 } # end for loop
 
 writeLines(text=batch_file_contents)
+
+
