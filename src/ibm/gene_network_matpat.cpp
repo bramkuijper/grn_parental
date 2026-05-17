@@ -11,15 +11,17 @@
 //remaining channel: epigenetics
 
 GRN_MatPat::GRN_MatPat(Parameters const &par) :
-    rd{},
-    seed{rd()},
-    rng_r{seed},
-    par{par},
-    data_file{par.file_name},
-    data_file_individuals{par.file_name_individuals},
-    males(par.N/2, Individual(par)),
-    females(par.N/2, Individual(par)),
-    meanW(par.L, std::vector < double >(par.L))
+    rd{}, // random device to get a random seed
+    seed{rd()}, // get the seed
+    rng_r{seed}, // initialise the random-number generator
+    par{par}, // initialize parameters
+    data_file{par.file_name}, // data for averages
+    data_file_individuals{par.file_name_individuals}, // data for individuals
+    males(par.N/2, Individual(par)), // initialize the males
+    females(par.N/2, Individual(par)), // initialize females
+    meanW(par.L, std::vector < double >(par.L)), // the matrix with mean values for each matrix element (for canalization tests)
+    meanS(par.L, 0.0), // vector with mean values of gene expression at the end of development
+    C(par.L, 0.0) // the vector with the percentage of mutations in network without effect on gene expression
 {
     run();
 }
@@ -229,7 +231,8 @@ void GRN_MatPat::write_data_headers()
         data_file << "sbar" << (row_idx + 1) << ";"
             << "varsbar" << (row_idx + 1) << ";"
             << "v" << (row_idx + 1) << ";"
-            << "varv" << (row_idx + 1) << ";";
+            << "varv" << (row_idx + 1) << ";"
+            << "C" << (row_idx + 1) << ";";
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -377,7 +380,8 @@ void GRN_MatPat::write_data()
         data_file << meanSbar[row_idx] << ";"
             << varSbar[row_idx] << ";"
             << meanV[row_idx] << ";"
-            << varV[row_idx] << ";";
+            << varV[row_idx] << ";"
+            << C[row_idx] << ";";
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -390,6 +394,7 @@ void GRN_MatPat::write_data()
         }
     }
 
+    meanS = meanSbar;
 
     // finish  by starting a new line
     data_file << std::endl;
@@ -510,6 +515,7 @@ void GRN_MatPat::write_parameters()
         << "p_nongenetic;" << par.p_nongenetic << std::endl
         << "p_maternal;" << par.p_maternal << std::endl
         << "max_time_step;" << par.max_time_step << std::endl
+        << "genetic_canalization_selected_loci_only;" << par.genetic_canalization_selected_loci_only << std::endl
         << "max_dev_time_step;" << par.max_dev_time_step << std::endl
         << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
         << "mu_w;" << par.mu_w << std::endl
@@ -524,8 +530,31 @@ void GRN_MatPat::write_parameters()
 
 } // end write_parameters
 
-Individual GRN_MatPat::make_reference_individual()
+void GRN_MatPat::make_reference_individual(Individual &ref)
 {
+    // first assign this individual the average W
+    ref.W = meanW;
+    
+    // then initilize gene loci
+    for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
+    {
+        // now perform development given an average S0
+        //
+        // because the mean phenotype is the same for males and females
+        // no need to focus on paternal vs maternal effects. However, 
+        // once we study sexual dimorphism, we can fully implement this
+        ref.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
+            + par.p_nongenetic * meanS[row_idx];
+    }
+        
+    // development, yay
+    for (unsigned dev_time_step_idx{0}; 
+            dev_time_step_idx < par.max_dev_time_step;
+            ++dev_time_step_idx)
+    {
+        ref.update_phenotype(dev_time_step_idx);
+    }
+} // end make_reference_individual()
 
 // calculate genetic canalization by mutating individuals
 // and look at their phenotype development, see p690 1st col, 3rd para
@@ -539,31 +568,27 @@ void GRN_MatPat::genetic_canalization()
     // (see below)
     std::uniform_int_distribution<unsigned> node_sampler{0, par.L * par.L - 1};
 
-    // make a reference individual
+    // first make a reference individual
+    // against which all the clones will be compared
     Individual reference_individual(par);
-
-    reference_individual.W = meanW;
-    
-    // first assign this individual the average W
-    for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
-    {
-        // now perform development given an average S0
-        //
-        // because the mean phenotype is the same for males and females
-        // no need to focus on paternal vs maternal effects. However, 
-        // once we study sexual dimorphism, we can fully implement this
-        clone.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
-            + par.p_nongenetic * meanS[row_idx];
-    }
-
+    make_reference_individual(reference_individual);
+   
+    // some error checking, to ensure the mean values of W
+    // are indeed properly copied over to the reference individual
     assert(reference_individual.W[par.L - 1][1] == meanW[par.L - 1][1]);
     assert(reference_individual.W[0][par.L - 1] == meanW[0][par.L - 1]);
 
-    // generate 1000 clones with 1 mutation. I take it mutation works 
+    // reset C to 0.0
+    fill(C.begin(), C.end(), 0.0);
+
+    double expression_difference_i;
+
+    // now generate 1000 clones with 1 mutation. I take it mutation works 
     // by simply changing one of the wij's by mutation
     for (unsigned int individual_idx{0}; 
             individual_idx < par.N_canalize; ++individual_idx)
     {
+        // make a clone
         Individual clone(par);
 
         // randomly sample a number between 0 and par.L^2, which is
@@ -615,7 +640,7 @@ void GRN_MatPat::genetic_canalization()
         // then change one element by mutation
         clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
 
-        // development, yay
+        // have the clone develop over the developmental time steps
         for (unsigned dev_time_step_idx{0}; 
                 dev_time_step_idx < par.max_dev_time_step;
                 ++dev_time_step_idx)
@@ -623,5 +648,43 @@ void GRN_MatPat::genetic_canalization()
             clone.update_phenotype(dev_time_step_idx);
         }
 
+        // now look at gene loci at the final dev time step
+        // and see how it differs from the reference individual,
+        // that is the value of C_i as per page 690 first col
+        // 3rd paragraph in Odorico et al
+        for (unsigned int locus_idx{0}; locus_idx < par.L; ++locus_idx)
+        {
+            // see whether locus needs to be included in 
+            // genetic canalization calculation or not
+            if (par.genetic_canalization_selected_loci_only)
+            {
+                // if no stabilizing selection on this locus
+                // do not include this in calculation
+                if (par.s[locus_idx] == 0.0)
+                {
+                    continue;
+                }
+            }
+
+            // claul
+            expression_difference_i = std::fabs(clone.S[par.max_dev_time_step - 1][locus_idx] - 
+                reference_individual.S[par.max_dev_time_step - 1][locus_idx]);
+
+            // only calculate those individuals whose gene expression is
+            // unaltered despite mutation
+            if (expression_difference_i < 
+                    par.canalization_threshold)
+            {
+                C[locus_idx] += 1.0;
+            }
+        } // end for unsigned locus_idx
+    } // end for unsigned individual_idx
+
+    // now finallly transform C (which is counts up to now)
+    // to contain percentages
+    for (unsigned int locus_idx{0}; 
+            locus_idx < par.L; ++locus_idx)
+    {
+        C[locus_idx] /= par.N_canalize;
     }
 } // end mean_canalization 

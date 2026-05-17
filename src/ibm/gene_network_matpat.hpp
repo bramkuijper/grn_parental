@@ -50,7 +50,12 @@ class GRN_MatPat
         // but also because of the calculation of canalization
         std::vector < std::vector < double > > meanW;
 
+        // mean values of gene expression for each locus
         std::vector < double > meanS;
+
+        // mean genetic canalisation values as in the 
+        // fraction of individuals
+        std::vector < double > C;
 
     public:
         // the constructor of the simulation
@@ -68,6 +73,12 @@ class GRN_MatPat
         void write_parameters();
         void write_out_all_individuals_headers();
         void genetic_canalization();
+
+        // make a reference individual 
+        // for the canalization procedure
+        // against which clones with a mutation
+        // will be compared 
+        void make_reference_individual(Individual &ref);
 };
 
 #endif

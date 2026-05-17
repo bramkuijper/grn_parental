@@ -80,6 +80,20 @@ class Parameters
 
         double baseline_fitness{1.0};
 
+        // if true: genetic canalization should only 
+        // be calculated for loci for which s_i != 0.0
+        // (i.e., those loci which are under stabilizing
+        // selection)
+        // if false: genetic canalization should be calculated
+        // over all L loci
+        bool genetic_canalization_selected_loci_only{false};
+
+        // threshold below which gene expression at a 
+        // particular locus is considered the same or different
+        // relative to that of a reference individual
+        // see Odorico p690 1st col 3rd para
+        double canalization_threshold{0.01};
+
         // strength of selection on variance 
         // of gene expression
         // see Odorico et al. eq (4)
