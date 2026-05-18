@@ -116,7 +116,7 @@ void GRN_MatPat::develop()
             male_iterator->update_phenotype(time_idx);
         }
 
-	male_iterator->average_phenotype();
+        male_iterator->average_phenotype();
     } 
 
     
@@ -128,7 +128,8 @@ void GRN_MatPat::develop()
         {
             female_iterator->update_phenotype(time_idx);
         }
-	female_iterator->average_phenotype();
+        
+        female_iterator->average_phenotype();
     } 
 } // end GRN_MatPat::develop
 

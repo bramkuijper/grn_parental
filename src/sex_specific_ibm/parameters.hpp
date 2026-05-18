@@ -24,6 +24,11 @@ class Parameters
         // number of genes in network
         unsigned L{5};
 
+        // the locus of the sex-determining 
+        // master gene, 
+        // ideally this is not one of the loci under selection
+        unsigned master_gene;
+
         // initialize for each individual the elements of w
         // as per p689 2nd column 1st paragraph in Odorico et al
         // [Wij drawn on N(0,0.1)]
@@ -82,8 +87,11 @@ class Parameters
         // standard deviation of W matrix entries
         double sdmu_w{0.5};
 
-        // optimum for each locus
-        std::vector <double> theta;
+        // optimum for each locus for females
+        std::vector <double> theta_f;
+
+        // optimum for each locus for males
+        std::vector <double> theta_m;
 
         // strength of selection on matching the optimum
         // see Odorico et al. eq (4)
@@ -115,7 +123,8 @@ class Parameters
 
         Parameters(unsigned const Lval) : 
             L(Lval),
-            theta(L, 0.0), // initialize all the values for theta
+            theta_f(L, 0.0), // initialize all the values for theta
+            theta_m(L, 0.0), // initialize all the values for theta
             s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)
             sprime(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}

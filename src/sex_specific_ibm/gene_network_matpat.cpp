@@ -4,8 +4,6 @@
 #include "individual.hpp"
 #include "gene_network_matpat.hpp"
 
-//TODO:calculate time to stability
-//TODO:finalize canalisation stats
 //TODO:offspring size, have size affect the selective optimum
 //then we have three channels: genes, RNA, size
 //remaining channel: epigenetics
@@ -17,8 +15,8 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     par{par}, // initialize parameters
     data_file{par.file_name}, // data for averages
     data_file_individuals{par.file_name_individuals}, // data for individuals
-    males(par.N/2, Individual(par)), // initialize the males
-    females(par.N/2, Individual(par)), // initialize females
+    males(par.N/2, Individual(par, false)), // initialize the males
+    females(par.N/2, Individual(par, true)), // initialize females
     meanW(par.L, std::vector < double >(par.L)), // the matrix with mean values for each matrix element (for canalization tests)
     meanS(par.L, 0.0), // vector with mean values of gene expression at the end of development
     C(par.L, 0.0), // the vector with the percentage of mutations in network without effect on gene expression
@@ -212,13 +210,13 @@ void GRN_MatPat::reproduce()
     for (unsigned adult_idx{0};
             adult_idx < par.N; ++adult_idx)
     {
-        if (uniform(rng_r) < 0.5)
+        if (juveniles[adult_idx].is_female)
         {
-            males.push_back(juveniles[adult_idx]);
+            females.push_back(juveniles[adult_idx]);
         }
         else
         {
-            females.push_back(juveniles[adult_idx]);
+            males.push_back(juveniles[adult_idx]);
         }
     }
 
@@ -538,7 +536,8 @@ void GRN_MatPat::write_parameters()
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
-        data_file << "theta" << (row_idx + 1) << ";" << par.theta[row_idx] << std::endl;
+        data_file << "theta_f" << (row_idx + 1) << ";" << par.theta_f[row_idx] << std::endl;
+        data_file << "theta_m" << (row_idx + 1) << ";" << par.theta_m[row_idx] << std::endl;
         data_file << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl;
         data_file << "sprime" << (row_idx + 1) << ";" << par.sprime[row_idx] << std::endl;
     }
@@ -731,16 +730,16 @@ void GRN_MatPat::environmental_canalization()
         {
 
             clone.update_phenotype(dev_time_step_idx);
-            std::cout << "clone " << individual_idx << " ";
+//            std::cout << "clone " << individual_idx << " ";
 
-            for (unsigned int locus_idx{0};
-                    locus_idx < par.L;
-                    ++locus_idx)
-            {
-                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
-            }
-
-            std::cout << std::endl;
+//            for (unsigned int locus_idx{0};
+//                    locus_idx < par.L;
+//                    ++locus_idx)
+//            {
+//                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
+//            }
+//
+//            std::cout << std::endl;
         } // end for unsigned int dev_time_step_idx
 
         // now calculate difference with reference individual
@@ -777,7 +776,7 @@ void GRN_MatPat::environmental_canalization()
 // the average individual in the population
 void GRN_MatPat::time_to_stability()
 {
-    Individual reference_individual(par);
+    Individual reference_individual(par, true);
     reference_individual.W = meanW;
 
     // reinitialize S, the per-locus gene expression 

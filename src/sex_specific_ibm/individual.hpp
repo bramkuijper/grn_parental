@@ -52,7 +52,7 @@ class Individual
        
         // initialisation constructor, 
         // used at the start of the simulation
-        Individual(Parameters const &par);
+        Individual(Parameters const &par, bool const is_female);
 
         // copy constructor, which is used when you assign
         // individuals to vectors and for other vector-related operations
@@ -65,6 +65,8 @@ class Individual
                 std::mt19937 &rng_r);
 
         void operator=(Individual const &other);
+
+        bool is_female; 
 
         // the sigmoid function to relate a raw gene expression value (x)
         // to a value of 0 and 1. See Odorico et al 2018 J Evol Biol eq. (2) and 

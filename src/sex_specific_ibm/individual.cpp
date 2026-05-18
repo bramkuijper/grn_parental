@@ -4,13 +4,14 @@
 #include "individual.hpp"
 
 // how to make an individual at the start of the simulation
-Individual::Individual(Parameters const &par) :
+Individual::Individual(Parameters const &par, bool const is_female) :
     pars(par),
     W(par.L, std::vector< double >(par.L) ),
     // S[t_i][j] // gene expression of locus j at time 0 <= t_i < max_dev_time_step
     S(par.max_dev_time_step, std::vector< double >(par.L, 0.0) ),
     Sbar(par.L, par.a),
-    V(par.L,0.0)
+    V(par.L,0.0),
+    is_female{is_female}
 {
     // initialize S_{t=0} with the value a
     for (unsigned trait_idx{0}; trait_idx < par.L; ++trait_idx)
@@ -26,7 +27,8 @@ Individual::Individual(Individual const &other) :
     W(other.W),
     S(other.S),
     Sbar(other.Sbar),
-    V(other.V)
+    V(other.V),
+    is_female{other.is_female}
 {} // end copy constructor
 
 // the birth constructor: this function is used to
@@ -44,6 +46,9 @@ Individual::Individual(Individual const &mom,
     // set up distribution functions
     std::uniform_real_distribution uniform{0.0,1.0};
     std::normal_distribution<double> standard_normal{0.0,1.0};
+
+    // determine embryo sex
+    is_female = uniform(rng_r) < 0.5;
 
     // inherit GRN gene loci
     for (unsigned row_idx{0}; row_idx < pars.L; ++row_idx)
