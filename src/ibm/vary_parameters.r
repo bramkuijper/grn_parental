@@ -62,7 +62,7 @@ s_values[1:2] <- 10
 # selection on developmental stability
 # of each of the loci 
 sprime <- numeric(length = L)
-sprime[1:2] <- 100
+sprime[1:2] <- 46000
 
 batch_file_contents <- ""
 

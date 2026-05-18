@@ -38,8 +38,8 @@ Individual::Individual(Individual const &mom,
         Parameters const &par,
         std::mt19937 &rng_r) :
     pars(par),
-    W(par.L, std::vector< double >(par.L) ),
-    S(par.max_dev_time_step, std::vector< double >(par.L) ),
+    W(par.L, std::vector< double >(par.L, 0.0) ),
+    S(par.max_dev_time_step, std::vector< double >(par.L, 0.0) ),
     Sbar(par.L, 0.0),
     V(par.L, 0.0)
 {
@@ -63,6 +63,16 @@ Individual::Individual(Individual const &mom,
                 :
                 mom.W[row_idx][col_idx];
 
+            // sensu Fierst's (2011) fixed genes model
+            // Wjk cannot influence Sk_t+1 if k is the sex
+            // specific locus, see Fierst 2011 p 57 1st column
+            // final para.
+            if (row_idx == par.sex_specific_locus_idx
+                    && col_idx != row_idx)
+            {
+                continue;
+            }
+
             // mutate the allele after inheritance
             if (uniform(rng_r) < pars.mu_w / pars.L)
             {
@@ -81,7 +91,8 @@ Individual::Individual(Individual const &mom,
         // this may be fair but in the latter case, both parents transmit a lot more
         // gene product than in the former case. Model does not deal with that stuff
         // at the moment... TODO
-        S[0][row_idx] = (1.0 - pars.p_nongenetic) * pars.a
+        S[0][row_idx] = (1.0 - pars.p_nongenetic) * 
+            (row_idx == par.sex_specific_locus_idx ? pars.sk[is_female] : pars.a)
             + pars.p_nongenetic * (
                     // transmit maternal gene expression level right before she
                     // reproduces
@@ -215,16 +226,22 @@ void Individual::update_phenotype(
     // S(t+1) vector, all set to 0
     //std::vector<double> Stplus1(pars.L, 0.0);
 
+    // the product of row W_i with the column vector S_t, 
+    // which involves the sum of W_ij x S_tj over all j
+    // for a given i and t
+    double W_i_x_S_t;
+
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {
+        W_i_x_S_t = 0.0;
+
         for (unsigned int col_idx{0}; col_idx < pars.L; ++col_idx)
         {
-            S[dev_time_step][row_idx] += gene_expression_sigmoid(
-                    W[row_idx][col_idx] * S[dev_time_step - 1][col_idx],
-                    pars.a
-                    );
-//		std::cout << dev_time_step << " " << S[dev_time_step][row_idx] << " " << S[dev_time_step - 1][col_idx] << std::endl;
+            W_i_x_S_t += W[row_idx][col_idx] * S[dev_time_step - 1][col_idx];
         } // end for col_idx
+        
+        S[dev_time_step][row_idx] = 
+            gene_expression_sigmoid(W_i_x_S_t,pars.a);
     } // end for row_idx
 } // update_phenotype()
 

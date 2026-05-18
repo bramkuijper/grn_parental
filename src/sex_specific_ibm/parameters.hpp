@@ -24,6 +24,11 @@ class Parameters
         // number of genes in network
         unsigned L{5};
 
+        // index of the sex-specific locus
+        unsigned sex_specific_locus_idx;
+
+        double sk[2]{0.0,0.0};
+
         // the locus of the sex-determining 
         // master gene, 
         // ideally this is not one of the loci under selection
@@ -120,6 +125,7 @@ class Parameters
 
         Parameters(unsigned const Lval) : 
             L(Lval),
+            sex_specific_locus_idx(Lval - 1),
             theta(2, std::vector < double > (Lval,0.0)), // initialize all the values for theta
             s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)
             sprime(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)

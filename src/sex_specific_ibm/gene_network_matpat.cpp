@@ -4,6 +4,9 @@
 #include "individual.hpp"
 #include "gene_network_matpat.hpp"
 
+// TODO: should parental effects also influence
+// sex-specific regulatory locus, at the moment they do but 
+// perhaps it should not.
 //TODO:offspring size, have size affect the selective optimum
 //then we have three channels: genes, RNA, size
 //remaining channel: epigenetics
