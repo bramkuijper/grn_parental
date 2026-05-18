@@ -732,16 +732,16 @@ void GRN_MatPat::environmental_canalization()
         {
 
             clone.update_phenotype(dev_time_step_idx);
-            std::cout << "clone " << individual_idx << " ";
+//            std::cout << "clone " << individual_idx << " ";
 
-            for (unsigned int locus_idx{0};
-                    locus_idx < par.L;
-                    ++locus_idx)
-            {
-                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
-            }
+//            for (unsigned int locus_idx{0};
+//                    locus_idx < par.L;
+//                    ++locus_idx)
+//            {
+//                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
+//            }
 
-            std::cout << std::endl;
+//            std::cout << std::endl;
         } // end for unsigned int dev_time_step_idx
 
         // now calculate difference with reference individual
@@ -749,12 +749,12 @@ void GRN_MatPat::environmental_canalization()
                 locus_idx < par.L;
                 ++locus_idx)
         {
-            std::cout << locus_idx << ": " 
-                << clone.S[0][locus_idx] << " " 
-                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
-                << meanS[locus_idx] << " "
-                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-                meanS[locus_idx]) << " ";
+//            std::cout << locus_idx << ": " 
+//                << clone.S[0][locus_idx] << " " 
+//                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
+//                << meanS[locus_idx] << " "
+//                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+//                meanS[locus_idx]) << " ";
 
 //            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
 //                meanS[locus_idx]) < par.stability_threshold)
@@ -766,10 +766,9 @@ void GRN_MatPat::environmental_canalization()
                     clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] - 
                     meanS[locus_idx]);
 
-//                meanS[locus_idx])
         } // end for locus_idx
 
-        std::cout << std::endl;
+//        std::cout << std::endl;
     } // end for individual_idx
     
     for (unsigned int locus_idx{0};

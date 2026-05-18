@@ -122,11 +122,12 @@ double Individual::fitness()
 {
     double exponent{0.0};
 
+    double difference;
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
+        difference = Sbar[s_idx] - pars.theta[s_idx];
         // the power function pow() slower than actually just squaring things
-        exponent += -pars.s[s_idx] * (Sbar[s_idx] - pars.theta[s_idx]) * 
-            (Sbar[s_idx] - pars.theta[s_idx])
+        exponent += -pars.s[s_idx] * difference * difference
             -pars.sprime[s_idx] * V[s_idx];  
     }
 
@@ -200,23 +201,22 @@ void Individual::update_phenotype(
         return;
     }
 
-    // TODO: sort out how to quickly loop over matrices in C++
-    // TODO: reduce size of S by only focusing on current time step 
-    // and then time steps for stats
-    //
-    // S(t+1) vector, all set to 0
-    //std::vector<double> Stplus1(pars.L, 0.0);
+    // the product of row W_i with the column vector S_t, 
+    // which involves the sum of W_ij x S_tj over all j
+    // for a given i and t
+    double W_i_x_S_t;
 
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {
+        W_i_x_S_t = 0.0;
+
         for (unsigned int col_idx{0}; col_idx < pars.L; ++col_idx)
         {
-            S[dev_time_step][row_idx] += gene_expression_sigmoid(
-                    W[row_idx][col_idx] * S[dev_time_step - 1][col_idx],
-                    pars.a
-                    );
-//		std::cout << dev_time_step << " " << S[dev_time_step][row_idx] << " " << S[dev_time_step - 1][col_idx] << std::endl;
+            W_i_x_S_t += W[row_idx][col_idx] * S[dev_time_step - 1][col_idx];
         } // end for col_idx
+        
+        S[dev_time_step][row_idx] = 
+            gene_expression_sigmoid(W_i_x_S_t,pars.a);
     } // end for row_idx
 } // update_phenotype()
 
