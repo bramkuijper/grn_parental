@@ -112,7 +112,7 @@ double Individual::mean_distance_to_optimum()
     {
         if (pars.s[s_idx] > 0.0)
         {
-            distance += std::fabs(Sbar[s_idx] - pars.theta[s_idx]);
+            distance += std::fabs(Sbar[s_idx] - pars.theta[is_female][s_idx]);
             ++loci_ctr;
         }
     }
@@ -126,13 +126,16 @@ double Individual::mean_distance_to_optimum()
 double Individual::fitness()
 {
     double exponent{0.0};
+    
+    double diff_optimum;
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
+        diff_optimum = (Sbar[s_idx] - pars.theta[is_female][s_idx]);
+
         // the power function pow() slower than actually just squaring things
-        exponent += -pars.s[s_idx] * (Sbar[s_idx] - pars.theta[s_idx]) * 
-            (Sbar[s_idx] - pars.theta[s_idx])
-            -pars.sprime[s_idx] * V[s_idx];  
+        exponent += -pars.s[is_female][s_idx] * diff_optimum * diff_optimum
+            -pars.sprime[is_female][s_idx] * V[s_idx];  
     }
 
     return(pars.baseline_fitness + std::exp(exponent));

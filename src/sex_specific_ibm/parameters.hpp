@@ -88,10 +88,7 @@ class Parameters
         double sdmu_w{0.5};
 
         // optimum for each locus for females
-        std::vector <double> theta_f;
-
-        // optimum for each locus for males
-        std::vector <double> theta_m;
+        std::vector < std::vector < double > > theta;
 
         // strength of selection on matching the optimum
         // see Odorico et al. eq (4)
@@ -123,8 +120,7 @@ class Parameters
 
         Parameters(unsigned const Lval) : 
             L(Lval),
-            theta_f(L, 0.0), // initialize all the values for theta
-            theta_m(L, 0.0), // initialize all the values for theta
+            theta(2, std::vector < double > (Lval,0.0)), // initialize all the values for theta
             s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)
             sprime(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)
         {}

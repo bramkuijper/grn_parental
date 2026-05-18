@@ -756,11 +756,17 @@ void GRN_MatPat::environmental_canalization()
                 << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
                 meanS[locus_idx]) << " ";
 
-            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-                meanS[locus_idx]) < par.stability_threshold)
-            {
-                Ce[locus_idx] += 1.0;
-            }
+//            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+//                meanS[locus_idx]) < par.stability_threshold)
+//            {
+//                Ce[locus_idx] += 1.0;
+//            }
+            
+            Ce[locus_idx] +=  std::fabs(
+                    clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] - 
+                    meanS[locus_idx]);
+
+//                meanS[locus_idx])
         } // end for locus_idx
 
         std::cout << std::endl;

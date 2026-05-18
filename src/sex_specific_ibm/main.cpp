@@ -12,7 +12,8 @@ int main(int argc, char **argv)
 
     for (size_t theta_idx{0}; theta_idx < pars.L; ++theta_idx)
     {
-        pars.theta[theta_idx] = std::stod(argv[argv_idx++]);
+        pars.theta[0][theta_idx] = std::stod(argv[argv_idx++]);
+        pars.theta[1][theta_idx] = std::stod(argv[argv_idx++]);
     }
 
     pars.max_time_step = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
