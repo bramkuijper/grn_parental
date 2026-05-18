@@ -30,6 +30,10 @@ class GRN_MatPat
 
         // time step of the simulation
         unsigned time_step{0};
+
+        // stats parameter used to 
+        // calculate the mean time to stability
+        unsigned t_stability{0};
         
         // parameter object
         Parameters par;
@@ -50,7 +54,17 @@ class GRN_MatPat
         // but also because of the calculation of canalization
         std::vector < std::vector < double > > meanW;
 
+        // mean values of gene expression for each locus
         std::vector < double > meanS;
+
+        // mean genetic canalisation values as in the 
+        // fraction of individuals unperturbed by a
+        // single genetic mutation
+        std::vector < double > C;
+        // mean genetic canalisation values as in the 
+        // fraction of individuals unperturbed by 
+        // environmental perturbations
+        std::vector < double > Ce;
 
     public:
         // the constructor of the simulation
@@ -68,6 +82,15 @@ class GRN_MatPat
         void write_parameters();
         void write_out_all_individuals_headers();
         void genetic_canalization();
+        void environmental_canalization();
+        void time_to_stability();
+        // make a reference individual 
+        // for the canalization procedure
+        // against which clones with a mutation
+        // will be compared 
+        void make_reference_individual(Individual &ref);
+
+
 };
 
 #endif

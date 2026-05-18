@@ -13,8 +13,13 @@ class Parameters
         // population size
         unsigned N{5000};
 
-        // population size when samlping individuals for the sake of canalization
-        unsigned N_canalize{1000};
+        // population size when sampling individuals 
+        // to assess genetic canalization
+        unsigned N_genetic_canalization{1000};
+        
+        // population size when sampling individuals 
+        // to assess environmental canalization
+        unsigned N_environmental_canalization{1000};
 
         // number of genes in network
         unsigned L{5};
@@ -50,6 +55,14 @@ class Parameters
         // number of developmental time steps
         // has to be larger than 0
         unsigned max_dev_time_step{10};
+       
+        // number of developmental time steps in case
+        // of environmental canalization
+        unsigned max_dev_time_step_envt_canalize{100};
+
+        // maximum developmental time step when we test for
+        // stability, we want this to be as long as possible
+        unsigned max_dev_time_step_stability{10000};
 
         // number of developmental time steps
         // recorded for stats from time T backwards. 
@@ -80,19 +93,16 @@ class Parameters
 
         double baseline_fitness{1.0};
 
-        // if true: genetic canalization should only 
-        // be calculated for loci for which s_i != 0.0
-        // (i.e., those loci which are under stabilizing
-        // selection)
-        // if false: genetic canalization should be calculated
-        // over all L loci
-        bool genetic_canalization_selected_loci_only{false};
-
         // threshold below which gene expression at a 
         // particular locus is considered the same or different
         // relative to that of a reference individual
         // see Odorico p690 1st col 3rd para
         double canalization_threshold{0.01};
+
+        // stability threshold, i.e., a difference S_i(t+1) - S_i(t)
+        // smaller than this threshold means that we have approximately
+        // S_i(t+1) = S_i(t)
+        double stability_threshold{0.001};
 
         // strength of selection on variance 
         // of gene expression

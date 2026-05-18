@@ -21,7 +21,8 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     females(par.N/2, Individual(par)), // initialize females
     meanW(par.L, std::vector < double >(par.L)), // the matrix with mean values for each matrix element (for canalization tests)
     meanS(par.L, 0.0), // vector with mean values of gene expression at the end of development
-    C(par.L, 0.0) // the vector with the percentage of mutations in network without effect on gene expression
+    C(par.L, 0.0), // the vector with the percentage of mutations in network without effect on gene expression
+    Ce(par.L, 0.0) // the vector with the percentage of networks that are unchanged despite envtal perturbation 
 {
     run();
 }
@@ -39,8 +40,15 @@ void GRN_MatPat::run()
     {
         develop();
 //        write_out_all_individuals();
-	
-	
+
+        // final timestep: run the statistics
+        if (time_step == par.max_time_step)
+        {
+            genetic_canalization();
+            environmental_canalization();
+            time_to_stability();
+        }
+
         // write out the data every nth generation
         if (time_step % par.data_output_interval == 0)
         {
@@ -221,6 +229,7 @@ void GRN_MatPat::reproduce()
 void GRN_MatPat::write_data_headers()
 {
     data_file << "time;"
+            << "time_stability" << ";"
             << "fitness" << ";"
             << "varfitness" << ";"
             << "distance_optimum" << ";"
@@ -232,7 +241,8 @@ void GRN_MatPat::write_data_headers()
             << "varsbar" << (row_idx + 1) << ";"
             << "v" << (row_idx + 1) << ";"
             << "varv" << (row_idx + 1) << ";"
-            << "C" << (row_idx + 1) << ";";
+            << "C" << (row_idx + 1) << ";"
+            << "Ce" << (row_idx + 1) << ";";
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -355,14 +365,16 @@ void GRN_MatPat::write_data()
     } // end for female_iterator
 
     // begin the actual output
-    data_file << time_step << ";"; 
+    data_file << time_step << ";";
     mean_fitness /= nf + nm;
     var_fitness = var_fitness / (nf + nm) - mean_fitness * mean_fitness;
     
     mean_distance /= (nf + nm);
     var_distance = var_distance / (nf + nm) - mean_distance * mean_distance;
 
-    data_file << mean_fitness << ";" 
+    data_file 
+        << t_stability << ";"
+        << mean_fitness << ";" 
         << var_fitness << ";"
         << mean_distance << ";"
         << var_distance << ";"; 
@@ -381,7 +393,8 @@ void GRN_MatPat::write_data()
             << varSbar[row_idx] << ";"
             << meanV[row_idx] << ";"
             << varV[row_idx] << ";"
-            << C[row_idx] << ";";
+            << C[row_idx] << ";"
+            << Ce[row_idx] << ";";
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -508,6 +521,8 @@ void GRN_MatPat::write_parameters()
     data_file << std::endl
         << std::endl
         << "N;" << par.N << std::endl
+        << "N_genetic_canalization;" << par.N_genetic_canalization << std::endl
+        << "N_environmental_canalization;" << par.N_environmental_canalization << std::endl
         << "L;" << par.L << std::endl
         << "s_init;" << par.s_init << std::endl
         << "sd_init_strength_w;" << par.sd_init_strength_w << std::endl
@@ -515,9 +530,9 @@ void GRN_MatPat::write_parameters()
         << "p_nongenetic;" << par.p_nongenetic << std::endl
         << "p_maternal;" << par.p_maternal << std::endl
         << "max_time_step;" << par.max_time_step << std::endl
-        << "genetic_canalization_selected_loci_only;" << par.genetic_canalization_selected_loci_only << std::endl
         << "max_dev_time_step;" << par.max_dev_time_step << std::endl
         << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
+        << "max_dev_time_step_envt_canalize;" << par.max_dev_time_step_envt_canalize << std::endl
         << "mu_w;" << par.mu_w << std::endl
         << "mu_w;" << par.sdmu_w << std::endl;
 
@@ -586,7 +601,7 @@ void GRN_MatPat::genetic_canalization()
     // now generate 1000 clones with 1 mutation. I take it mutation works 
     // by simply changing one of the wij's by mutation
     for (unsigned int individual_idx{0}; 
-            individual_idx < par.N_canalize; ++individual_idx)
+            individual_idx < par.N_genetic_canalization; ++individual_idx)
     {
         // make a clone
         Individual clone(par);
@@ -654,19 +669,8 @@ void GRN_MatPat::genetic_canalization()
         // 3rd paragraph in Odorico et al
         for (unsigned int locus_idx{0}; locus_idx < par.L; ++locus_idx)
         {
-            // see whether locus needs to be included in 
-            // genetic canalization calculation or not
-            if (par.genetic_canalization_selected_loci_only)
-            {
-                // if no stabilizing selection on this locus
-                // do not include this in calculation
-                if (par.s[locus_idx] == 0.0)
-                {
-                    continue;
-                }
-            }
-
-            // claul
+            // calculate expression difference between current and reference
+            // individual
             expression_difference_i = std::fabs(clone.S[par.max_dev_time_step - 1][locus_idx] - 
                 reference_individual.S[par.max_dev_time_step - 1][locus_idx]);
 
@@ -685,6 +689,142 @@ void GRN_MatPat::genetic_canalization()
     for (unsigned int locus_idx{0}; 
             locus_idx < par.L; ++locus_idx)
     {
-        C[locus_idx] /= par.N_canalize;
+        C[locus_idx] /= par.N_genetic_canalization;
     }
 } // end mean_canalization 
+
+// obtain statistics on the amount of environmental
+// canalization, as per Odorico et al p.690, 1st col,
+// 4th paragraph
+void GRN_MatPat::environmental_canalization()
+{
+    // reset the Ce vector
+    fill(Ce.begin(), Ce.end(), 0.0);
+    // sample individuals and give
+    // then give them random initial expression of gene loci
+    for (unsigned individual_idx{0};
+            individual_idx < par.N_environmental_canalization;
+            ++individual_idx)
+    {
+        Individual clone(par);
+        clone.W = meanW;
+
+        // assign individuals a different S vector so that it can
+        // deal with different number of time steps
+        clone.S = std::vector < 
+            std::vector < double > >
+                    (par.max_dev_time_step_envt_canalize, std::vector < double > (par.L, 0.0));
+
+        // sample loci from a uniform distribution
+        for (unsigned int locus_idx{0};
+                locus_idx < par.L;
+                ++locus_idx)
+        {
+            clone.S[0][locus_idx] = uniform(rng_r);
+        } // end for locus_idx
+
+        assert(clone.S.size() == par.max_dev_time_step_envt_canalize);
+
+        for (unsigned int dev_time_step_idx{0}; 
+                dev_time_step_idx < par.max_dev_time_step_envt_canalize;
+                ++dev_time_step_idx)
+        {
+
+            clone.update_phenotype(dev_time_step_idx);
+            std::cout << "clone " << individual_idx << " ";
+
+            for (unsigned int locus_idx{0};
+                    locus_idx < par.L;
+                    ++locus_idx)
+            {
+                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
+            }
+
+            std::cout << std::endl;
+        } // end for unsigned int dev_time_step_idx
+
+        // now calculate difference with reference individual
+        for (unsigned int locus_idx{0};
+                locus_idx < par.L;
+                ++locus_idx)
+        {
+            std::cout << locus_idx << ": " 
+                << clone.S[0][locus_idx] << " " 
+                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
+                << meanS[locus_idx] << " "
+                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+                meanS[locus_idx]) << " ";
+
+            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+                meanS[locus_idx]) < par.stability_threshold)
+            {
+                Ce[locus_idx] += 1.0;
+            }
+        } // end for locus_idx
+
+        std::cout << std::endl;
+    } // end for individual_idx
+    
+    for (unsigned int locus_idx{0};
+            locus_idx < par.L;
+            ++locus_idx)
+    {
+        Ce[locus_idx] /= par.N_environmental_canalization;
+    }
+}// end environmental_canalization()
+
+// assess time to equilibrium for phenotypes of
+// the average individual in the population
+void GRN_MatPat::time_to_stability()
+{
+    Individual reference_individual(par);
+    reference_individual.W = meanW;
+
+    // reinitialize S, the per-locus gene expression 
+    // for each developmental time step
+    // as it now needs to deal with a different number of
+    // time steps to assess stability
+    reference_individual.S = std::vector < std::vector < double > >(
+            par.max_dev_time_step_stability, std::vector < double > (par.L, 0.0)
+            );
+
+    for (unsigned int locus_idx{0}; 
+            locus_idx < par.L; ++locus_idx)
+    {
+        reference_individual.S[0][locus_idx] = par.a;
+    }
+
+    bool converged;
+
+    reference_individual.update_phenotype(0);
+
+    unsigned int time_idx;
+    for (time_idx = 1;
+            time_idx < par.max_dev_time_step_stability;
+            ++time_idx)
+    {
+        converged = true;
+        assert(time_idx < reference_individual.S.size());
+        reference_individual.update_phenotype(time_idx);
+
+        for (unsigned int locus_idx{0};
+                locus_idx < par.L;
+                ++locus_idx)
+        {
+            if (std::fabs(reference_individual.S[time_idx][locus_idx] - 
+                        reference_individual.S[time_idx - 1][locus_idx]) > 
+                            par.stability_threshold)
+            {
+                converged = false;
+                break;
+            }
+        }
+
+        if (converged)
+        {
+            break;
+        }
+    }
+
+    t_stability = time_idx;
+} // end time_to_stability()

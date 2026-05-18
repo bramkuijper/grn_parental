@@ -29,12 +29,12 @@ theta[1] <- 0.33
 theta[2] <- 2*theta[1]
 
 # fraction of phenotype that is nongenetically inherited
-p_nongenetic <- seq(0,1,0.1)
+p_nongenetic <- c(0)#seq(0,1,0.1)
 
 p_maternal <- seq(0,1,0.1)
 
 # number of time steps before development is completed
-dev_time <- c(24)
+dev_time <- c(4)
 
 # generation of output files
 # generate a date_time stamp as a character
@@ -57,12 +57,12 @@ exe = "./gene_network_matpat.exe"
 s_values <- numeric(length=L)
 
 # set the first and the second one to nonzero values
-s_values[1:6] <- 10
+s_values[1:2] <- 10
 
 # selection on developmental stability
 # of each of the loci 
 sprime <- numeric(length = L)
-sprime[1:6] <- 1000
+sprime[1:2] <- 10
 
 batch_file_contents <- ""
 

@@ -195,11 +195,10 @@ void Individual::update_phenotype(
         unsigned const dev_time_step)
 {
     if (dev_time_step < 1 || 
-            dev_time_step >= pars.max_dev_time_step)
+            dev_time_step >= static_cast<unsigned>(S.size()))
     {
         return;
     }
-
 
     // TODO: sort out how to quickly loop over matrices in C++
     // TODO: reduce size of S by only focusing on current time step 
