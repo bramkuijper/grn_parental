@@ -159,7 +159,7 @@ double Individual::fitness()
 
     for (unsigned s_idx{0}; s_idx < pars.L; ++s_idx)
     {
-        diff_optimum = (Sbar[s_idx] - pars.theta[is_female][s_idx]);
+        diff_optimum = Sbar[s_idx] - pars.theta[is_female][s_idx];
 
         // the power function pow() slower than actually just squaring things
         exponent += -pars.s[s_idx] * diff_optimum * diff_optimum

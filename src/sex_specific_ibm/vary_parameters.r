@@ -4,7 +4,7 @@
 nrep <- 3
 
 # maximum amount of generations a simulation runs
-maxgen <- 100
+maxgen <- 10000
 
 # output interval in the data file, i.e., 
 # how many timesteps until the next statistics are written out
@@ -68,12 +68,12 @@ exe = "./gene_network_matpat.exe"
 s_values <- numeric(length=L)
 
 # set the first and the second one to nonzero values
-s_values[1:2] <- 10
+s_values[1:2] <- 20
 
 # selection on developmental stability
 # of each of the loci 
 sprime <- numeric(length = L)
-sprime[1:2] <- 1000
+sprime[1:2] <- 0
 
 batch_file_contents <- ""
 

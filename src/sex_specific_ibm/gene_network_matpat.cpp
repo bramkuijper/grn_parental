@@ -37,11 +37,11 @@ void GRN_MatPat::run()
             time_step <= par.max_time_step; ++time_step)
     {
         develop();
-//        write_out_all_individuals();
 
         // final timestep: run the statistics
         if (time_step == par.max_time_step)
         {
+            write_out_all_individuals();
             genetic_canalization();
             environmental_canalization();
             time_to_stability();

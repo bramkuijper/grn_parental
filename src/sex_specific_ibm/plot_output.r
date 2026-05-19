@@ -97,42 +97,60 @@ names_vbar_f <- names_tibble[grepl("^v_f",names_tibble)]
 # get the number of loci from the names we recovered so far
 n_loci <- max(as.numeric(gsub(pattern="sbar_m", x = names_sbar_m, replacement = "")))
 
+time_var <- "time"
+
 name <- ""
+
+jsonstuff <- "["
+
 for (locus_idx in 1:n_loci)
 {
+    jsonstuff <- paste0(jsonstuff,
+            '{"xvar" : "',time_var,'",
+                "yvar" : [')
+
     for (locus_idx2 in 1:n_loci)
     {
         name <- paste0("w",locus_idx,locus_idx2)
 
-        if (locus_idx2 == locus_idx)
+        jsonstuff <- paste0(jsonstuff,'"',name,'"')
+
+        if (locus_idx2 < n_loci)
         {
-            names_diagonal <- c(names_diagonal, name)
-        } else if (locus_idx2 < locus_idx)
-        {
-            names_upper_diagonal <- c(names_upper_diagonal, name)
-        } else
-        {
-            names_lower_diagonal <- c(names_lower_diagonal, name)
+            jsonstuff <- paste0(jsonstuff,',')
         }
     }
+
+    jsonstuff <- paste0(jsonstuff, ']}')
+
+    if (locus_idx < n_loci)
+    {
+        jsonstuff <- paste0(jsonstuff, ',')
+    } 
+
+    jsonstuff <- paste0(jsonstuff, '\n')
+
 }
 
-jsonstuff <- paste0('[
-    {"xvar" : "time",
-        "yvar" : ["',paste(names_diagonal,collapse="\",\""),
-        '"]
-    },
-    {
-        "xvar" : "time",
-        "yvar" : ["',paste(names_lower_diagonal, collapse="\",\""),
-            '"]
-    },
-    {
-        "xvar" : "time",
-        "yvar" : ["',paste(names_upper_diagonal, collapse="\",\""),
-            '"]
-    },
-    {
+
+#jsonstuff <- paste0('[
+#    {"xvar" : "time",
+#        "yvar" : ["',paste(names_diagonal,collapse="\",\""),
+#        '"]
+#    },
+#    {
+#        "xvar" : "time",
+#        "yvar" : ["',paste(names_lower_diagonal, collapse="\",\""),
+#            '"]
+#    },
+#    {
+#        "xvar" : "time",
+#        "yvar" : ["',paste(names_upper_diagonal, collapse="\",\""),
+#            '"]
+#    },
+jsonstuff <- paste0(jsonstuff,
+        '
+    ,{
         "xvar" : "time",
         "yvar" : ["',paste(names_sbar_f, collapse="\",\""),
             '"]
@@ -153,6 +171,7 @@ jsonstuff <- paste0('[
             '"]
     }
 ]')
+
 
 # transpose the tibble with the parameters
 params <- as.data.frame(t(data.tibble.params[,"value"]))
