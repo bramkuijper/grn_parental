@@ -4,7 +4,7 @@
 nrep <- 3
 
 # maximum amount of generations a simulation runs
-maxgen <- 50000
+maxgen <- 100
 
 # output interval in the data file, i.e., 
 # how many timesteps until the next statistics are written out

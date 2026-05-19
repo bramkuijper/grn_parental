@@ -41,9 +41,6 @@ class Parameters
         // [Wij drawn on N(0,0.1)]
         double sd_init_strength_w{0.1};
 
-        // initial value of each element of the phenotype
-        double s_init{0.0};
-
         // constitutive gene expression value
         // see Odorico et al 2018 p 689 1st column, 1st para
         // in the absence of any GRN, this is the value

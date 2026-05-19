@@ -26,6 +26,8 @@ find.params <- function(filename) {
             return(line_i)
         }
     }
+
+    return(NA)
 }
 # use tidyverse's sym() to transform strings to symbols 
 transform.sym  <- function(x) 
@@ -56,14 +58,17 @@ if (!exists("file.name"))
 
 param.line <- find.params(file.name)
 
+n_loci <- NA
 
-# get the parameters
-data.tibble.params <- read_delim(file=file.name
-        ,delim=";"
-        ,skip=param.line
-        ,col_names=c("name","value")
-        )
-
+if (!is.na(param.line))
+{
+    # get the parameters
+    data.tibble.params <- read_delim(file=file.name
+            ,delim=";"
+            ,skip=param.line
+            ,col_names=c("name","value")
+            )
+}
 
 data.tibble <- read_delim(file=file.name
         ,delim=";"
@@ -75,22 +80,26 @@ if (nrow(data.tibble) > 5000)
     data.tibble <- data.tibble[round(seq(1,nrow(data.tibble),length.out=1000)),]
 }
 
-row_params <- data.tibble.params$value
-names(row_params) <- data.tibble.params$name
+# no parameters available 
+# scope them from 
 
-n_loci <- as.numeric(row_params["L"])
-
-names_sbar <- c()
-names_vbar <- c()
 names_diagonal <- c()
 names_lower_diagonal <- c()
 names_upper_diagonal <- c()
 
+names_tibble <- names(data.tibble)
+
+names_sbar_m <- names_tibble[grepl("^sbar_m",names_tibble)]
+names_sbar_f <- names_tibble[grepl("^sbar_f",names_tibble)]
+names_vbar_m <- names_tibble[grepl("^v_f",names_tibble)]
+names_vbar_f <- names_tibble[grepl("^v_f",names_tibble)]
+
+# get the number of loci from the names we recovered so far
+n_loci <- max(as.numeric(gsub(pattern="sbar_m", x = names_sbar_m, replacement = "")))
+
 name <- ""
 for (locus_idx in 1:n_loci)
 {
-    names_sbar <- c(names_sbar, paste0("sbar",locus_idx))
-    names_vbar <- c(names_vbar, paste0("v",locus_idx))
     for (locus_idx2 in 1:n_loci)
     {
         name <- paste0("w",locus_idx,locus_idx2)
@@ -125,20 +134,29 @@ jsonstuff <- paste0('[
     },
     {
         "xvar" : "time",
-        "yvar" : ["',paste(names_sbar, collapse="\",\""),
+        "yvar" : ["',paste(names_sbar_f, collapse="\",\""),
             '"]
     },
     {
         "xvar" : "time",
-        "yvar" : ["',paste(names_vbar, collapse="\",\""),
+        "yvar" : ["',paste(names_sbar_m, collapse="\",\""),
+            '"]
+    },
+    {
+        "xvar" : "time",
+        "yvar" : ["',paste(names_vbar_f, collapse="\",\""),
+            '"]
+    },
+    {
+        "xvar" : "time",
+        "yvar" : ["',paste(names_vbar_m, collapse="\",\""),
             '"]
     }
 ]')
 
 # transpose the tibble with the parameters
-params <- data.tibble.params %>% pivot_wider(
-        names_from = name
-        ,values_from = value)
+params <- as.data.frame(t(data.tibble.params[,"value"]))
+names(params) <- data.tibble.params$name
 
 plot.structure <- fromJSON(jsonstuff, simplifyVector = F)
 
@@ -155,9 +173,11 @@ single.plot <- function(xvar, yvar, sub.data.tibble) {
     {
         yvar_name <- make.var.name(yvar)
         yvar_values <- paste0(yvar_name,"_values")
-
+        
+        sub.data.tibble %>% dplyr::summarise(n = dplyr::n(), )
+        
         sub.data <- pivot_longer(data=sub.data.tibble
-                ,cols=yvar
+                ,cols=all_of(yvar)
                 ,names_to=yvar_name
                 ,values_to=yvar_values)
 
@@ -203,9 +223,9 @@ for (plot_struct_idx in 1:plot.structure.l)
     # hence, try to flatten it
     xvar <- unlist(plot.structure[[plot_struct_idx]]$xvar)
     yvar <- unlist(plot.structure[[plot_struct_idx]]$yvar)
-
+    
     plot.list[[plot.list.idx]] <- single.plot(xvar, yvar, data.tibble)
-
+    
     # add ylim
     if ("ylim" %in% names(plot.structure[[plot_struct_idx]]))
     {
@@ -232,5 +252,4 @@ wrap_plots(plot.list,ncol=2, byrow=F)
 file.name <- paste0("graph_",basename(file.name),".pdf")
 
 ggsave(file.name,height=20, width = 20)
-
 

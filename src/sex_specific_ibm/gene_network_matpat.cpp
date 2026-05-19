@@ -548,7 +548,6 @@ void GRN_MatPat::write_parameters()
         << "N_genetic_canalization;" << par.N_genetic_canalization << std::endl
         << "N_environmental_canalization;" << par.N_environmental_canalization << std::endl
         << "L;" << par.L << std::endl
-        << "s_init;" << par.s_init << std::endl
         << "sd_init_strength_w;" << par.sd_init_strength_w << std::endl
         << "a;" << par.a << std::endl
         << "max_time_step;" << par.max_time_step << std::endl
@@ -556,7 +555,9 @@ void GRN_MatPat::write_parameters()
         << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
         << "max_dev_time_step_envt_canalize;" << par.max_dev_time_step_envt_canalize << std::endl
         << "mu_w;" << par.mu_w << std::endl
-        << "mu_w;" << par.sdmu_w << std::endl;
+        << "mu_w;" << par.sdmu_w << std::endl
+        << "init_sk_f;" << par.init_sk[1] << std::endl
+        << "init_sk_m;" << par.init_sk[0] << std::endl;
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {

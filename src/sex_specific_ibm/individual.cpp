@@ -13,10 +13,16 @@ Individual::Individual(Parameters const &par, bool const is_female) :
     V(par.L,0.0),
     is_female{is_female}
 {
+    double initial_value;
     // initialize S_{t=0} with the value a
     for (unsigned trait_idx{0}; trait_idx < par.L; ++trait_idx)
     {
-        S[0][trait_idx] = par.a;
+        initial_value = trait_idx == par.sex_specific_locus_idx ? 
+            par.init_sk[is_female] 
+            :
+            par.a;
+
+        S[0][trait_idx] = initial_value;
     }
 } // end Individual() initialization constructor
 
@@ -47,7 +53,7 @@ Individual::Individual(Individual const &mom,
     std::uniform_real_distribution uniform{0.0,1.0};
     std::normal_distribution<double> standard_normal{0.0,1.0};
 
-    // determine embryo sex
+    // determine embryo sex, 1:1 sex ratio
     is_female = uniform(rng_r) < 0.5;
 
     // inherit GRN gene loci
@@ -71,6 +77,7 @@ Individual::Individual(Individual const &mom,
                     && col_idx != row_idx)
             {
                 W[row_idx][col_idx] = 0.0;
+                continue;
             }
 
             // mutate the allele after inheritance
@@ -91,7 +98,10 @@ Individual::Individual(Individual const &mom,
         // otherwise just set it to be equal to the constitutive 
         // gene expression
         initial_expression = 
-            row_idx == pars.sex_specific_locus_idx ? pars.init_sk[is_female] : pars.a;
+            row_idx == pars.sex_specific_locus_idx ? 
+                pars.init_sk[is_female] 
+                : 
+                pars.a;
 
         // at the moment this does not deal with absolute gamete size
         // a 1:5 ratio of paternal:maternal gamete sizes has p_maternal 5/6

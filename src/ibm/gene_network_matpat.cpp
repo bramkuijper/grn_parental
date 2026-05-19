@@ -533,7 +533,6 @@ void GRN_MatPat::write_parameters()
         << "N_genetic_canalization;" << par.N_genetic_canalization << std::endl
         << "N_environmental_canalization;" << par.N_environmental_canalization << std::endl
         << "L;" << par.L << std::endl
-        << "s_init;" << par.s_init << std::endl
         << "sd_init_strength_w;" << par.sd_init_strength_w << std::endl
         << "a;" << par.a << std::endl
         << "p_nongenetic;" << par.p_nongenetic << std::endl
