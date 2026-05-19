@@ -10,15 +10,28 @@ int main(int argc, char **argv)
     unsigned Lval = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
     Parameters pars(Lval);
 
-    for (size_t theta_idx{0}; theta_idx < pars.L; ++theta_idx)
+    for (size_t locus_idx{0}; locus_idx < pars.L; ++locus_idx)
     {
-        pars.theta[0][theta_idx] = std::stod(argv[argv_idx++]);
-        pars.theta[1][theta_idx] = std::stod(argv[argv_idx++]);
+        pars.theta[0][locus_idx] = std::stod(argv[argv_idx++]);
+    }
+    
+    for (size_t locus_idx{0}; locus_idx < pars.L; ++locus_idx)
+    {
+        pars.theta[1][locus_idx] = std::stod(argv[argv_idx++]);
     }
 
     pars.max_time_step = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
-    pars.p_nongenetic = std::stod(argv[argv_idx++]);
-    pars.p_maternal = std::stod(argv[argv_idx++]);
+
+    for (size_t locus_idx{0}; locus_idx < pars.L; ++locus_idx)
+    {
+        pars.p_nongenetic[locus_idx] = std::stod(argv[argv_idx++]);
+    }
+    
+    for (size_t locus_idx{0}; locus_idx < pars.L; ++locus_idx)
+    {
+        pars.p_maternal[locus_idx] = std::stod(argv[argv_idx++]);
+    }
+
     pars.max_dev_time_step = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
 
     for (size_t s_idx{0}; s_idx < pars.L; ++s_idx)
@@ -29,6 +42,11 @@ int main(int argc, char **argv)
     for (size_t s_idx{0}; s_idx < pars.L; ++s_idx)
     {
         pars.sprime[s_idx] = std::stod(argv[argv_idx++]);
+    }
+
+    for (size_t sk_idx{0}; sk_idx <2; ++sk_idx)
+    {
+        pars.sk[sk_idx] = std::stod(argv[argv_idx++]);
     }
 
     pars.data_output_interval = static_cast<unsigned>(std::stoi(argv[argv_idx++]));

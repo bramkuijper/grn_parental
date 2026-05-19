@@ -27,7 +27,9 @@ class Parameters
         // index of the sex-specific locus
         unsigned sex_specific_locus_idx;
 
-        double sk[2]{0.0,0.0};
+        // initial levels of gene expression for
+        // the sex-specific locus
+        double sk[2]{0.0,1.0};
 
         // the locus of the sex-determining 
         // master gene, 
@@ -125,9 +127,9 @@ class Parameters
 
         Parameters(unsigned const Lval) : 
             L(Lval),
-            p_maternal(Lval, 0.0),
-            p_nongenetic(Lval, 0.0),
             sex_specific_locus_idx(Lval - 1),
+            p_nongenetic(Lval, 0.0),
+            p_maternal(Lval, 0.0),
             theta(2, std::vector < double > (Lval,0.0)), // initialize all the values for theta
             s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)
             sprime(L, 0.0) // initialize all the values for s, the strength of selection on each trait (0 = no selection)

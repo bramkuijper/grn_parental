@@ -19,8 +19,8 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     females(par.N/2, Individual(par, true)), // initialize females
     meanW(par.L, std::vector < double >(par.L)), // the matrix with mean values for each matrix element (for canalization tests)
     meanS(2, std::vector<double>(par.L,0.0)), // vector with mean values of gene expression at the end of development
-    C(par.L, 0.0), // the vector with the percentage of mutations in network without effect on gene expression
-    Ce(par.L, 0.0) // the vector with the percentage of networks that are unchanged despite envtal perturbation 
+    C(2,std::vector < double >(par.L)), // the vector with the percentage of mutations in network without effect on gene expression
+    Ce(2,std::vector < double >(par.L)) // the vector with the percentage of networks that are unchanged despite envtal perturbation 
 {
     run();
 }
@@ -594,9 +594,10 @@ void GRN_MatPat::make_reference_individual(Individual &ref)
         // because the mean phenotype is the same for males and females
         // no need to focus on paternal vs maternal effects. However, 
         // once we study sexual dimorphism, we can fully implement this
-        ref.S[0][row_idx] = (1.0 - par.p_nongenetic[row_idx]) * par.a
-            + par.p_nongenetic[row_idx] * meanS[is_female][row_idx];
-    }
+        ref.S[0][row_idx] = (1.0 - par.p_nongenetic[row_idx]) * initial_expression
+            + par.p_nongenetic[row_idx] * par.p_maternal[row_idx] * meanS[true][row_idx]
+            + par.p_nongenetic[row_idx] * (1.0 - par.p_maternal[row_idx]) * meanS[false][row_idx];
+    } // end for unsigned row_idx
         
     // development, yay
     for (unsigned dev_time_step_idx{0}; 
@@ -619,19 +620,23 @@ void GRN_MatPat::genetic_canalization()
     // (see below)
     std::uniform_int_distribution<unsigned> node_sampler{0, par.L * par.L - 1};
 
-    // first make a reference individual
-    // against which all the clones will be compared
-    Individual reference_male(par, false);
-    Individual reference_female(par, true);
-    make_reference_individual(reference_male);
-    make_reference_individual(reference_female);
-   
+    // vector for male and female reference individuals
+    // against which clones can be compared
+    std::vector < Individual > reference_individuals{};
+
+    // male on position 1
+    reference_individuals.push_back(Individual(par, false));
+    make_reference_individual(reference_individuals[0]);
+    // female on position 2
+    reference_individuals.push_back(Individual(par, true));
+    make_reference_individual(reference_individuals[1]);
+
     // some error checking, to ensure the mean values of W
     // are indeed properly copied over to the reference individual
-    assert(reference_male.W[par.L - 1][1] == meanW[par.L - 1][1]);
-    assert(reference_male.W[0][par.L - 1] == meanW[0][par.L - 1]);
-    assert(reference_female.W[par.L - 1][1] == meanW[par.L - 1][1]);
-    assert(reference_female.W[0][par.L - 1] == meanW[0][par.L - 1]);
+    assert(reference_individuals[0].W[par.L - 1][1] == meanW[par.L - 1][1]);
+    assert(reference_individuals[0].W[0][par.L - 1] == meanW[0][par.L - 1]);
+    assert(reference_individuals[1].W[par.L - 1][1] == meanW[par.L - 1][1]);
+    assert(reference_individuals[1].W[0][par.L - 1] == meanW[0][par.L - 1]);
 
     // reset C to 0.0
     C = std::vector < std::vector < double > >(2, std::vector <double> (par.L,0.0));
@@ -709,7 +714,7 @@ void GRN_MatPat::genetic_canalization()
                     (1.0 - par.p_nongenetic[row_idx]) * initial_expression
                     + par.p_nongenetic[row_idx] * par.p_maternal[row_idx] * meanS[true][row_idx]
                     + par.p_nongenetic[row_idx] * (1.0 - par.p_maternal[row_idx]) * meanS[false][row_idx];
-            }
+            } // end unsigned int row_idx
            
             // then change one element by mutation
             clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
@@ -731,25 +736,26 @@ void GRN_MatPat::genetic_canalization()
                 // calculate expression difference between current and reference
                 // individual
                 expression_difference_i = std::fabs(clone.S[par.max_dev_time_step - 1][locus_idx] - 
-                    reference_individual.S[par.max_dev_time_step - 1][locus_idx]);
+                    reference_individuals[sex_idx].S[par.max_dev_time_step - 1][locus_idx]);
 
                 // only calculate those individuals whose gene expression is
                 // unaltered despite mutation
                 if (expression_difference_i < 
                         par.canalization_threshold)
                 {
-                    C[locus_idx] += 1.0;
+                    C[sex_idx][locus_idx] += 1.0;
                 }
             } // end for unsigned locus_idx
         } // end for unsigned individual_idx
 
-    // now finallly transform C (which is counts up to now)
-    // to contain percentages
-    for (unsigned int locus_idx{0}; 
-            locus_idx < par.L; ++locus_idx)
-    {
-        C[locus_idx] /= par.N_genetic_canalization;
-    }
+        // now finallly transform C (which is counts up to now)
+        // to contain percentages
+        for (unsigned int locus_idx{0}; 
+                locus_idx < par.L; ++locus_idx)
+        {
+            C[sex_idx][locus_idx] /= par.N_genetic_canalization;
+        }
+    }// end unsigned sex_idx
 } // end mean_canalization 
 
 // obtain statistics on the amount of environmental
@@ -757,79 +763,91 @@ void GRN_MatPat::genetic_canalization()
 // 4th paragraph
 void GRN_MatPat::environmental_canalization()
 {
-    // reset the Ce vector
-    fill(Ce.begin(), Ce.end(), 0.0);
-    // sample individuals and give
-    // then give them random initial expression of gene loci
-    for (unsigned individual_idx{0};
-            individual_idx < par.N_environmental_canalization;
-            ++individual_idx)
+    // reset Ce vector to 0
+    Ce = std::vector < std::vector < double > >(
+            2, 
+            std::vector < double >(par.L,0.0));
+
+    for (unsigned int sex_idx{0}; sex_idx < 2; ++sex_idx)
     {
-        Individual clone(par);
-        clone.W = meanW;
-
-        // assign individuals a different S vector so that it can
-        // deal with different number of time steps
-        clone.S = std::vector < 
-            std::vector < double > >
-                    (par.max_dev_time_step_envt_canalize, std::vector < double > (par.L, 0.0));
-
-        // sample loci from a uniform distribution
-        for (unsigned int locus_idx{0};
-                locus_idx < par.L;
-                ++locus_idx)
+        // sample individuals and give
+        // then give them random initial expression of gene loci
+        for (unsigned individual_idx{0};
+                individual_idx < par.N_environmental_canalization;
+                ++individual_idx)
         {
-            clone.S[0][locus_idx] = uniform(rng_r);
-        } // end for locus_idx
+            Individual clone(par, static_cast<bool>(sex_idx));
+            clone.W = meanW;
 
-        assert(clone.S.size() == par.max_dev_time_step_envt_canalize);
+            // assign individuals a different S vector so that it can
+            // deal with different number of time steps
+            clone.S = std::vector < 
+                std::vector < double > >
+                        (par.max_dev_time_step_envt_canalize, std::vector < double > (par.L, 0.0));
 
-        for (unsigned int dev_time_step_idx{0}; 
-                dev_time_step_idx < par.max_dev_time_step_envt_canalize;
-                ++dev_time_step_idx)
-        {
-
-            clone.update_phenotype(dev_time_step_idx);
-//            std::cout << "clone " << individual_idx << " ";
-
-//            for (unsigned int locus_idx{0};
-//                    locus_idx < par.L;
-//                    ++locus_idx)
-//            {
-//                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
-//            }
-//
-//            std::cout << std::endl;
-        } // end for unsigned int dev_time_step_idx
-
-        // now calculate difference with reference individual
-        for (unsigned int locus_idx{0};
-                locus_idx < par.L;
-                ++locus_idx)
-        {
-//            std::cout << locus_idx << ": " 
-//                << clone.S[0][locus_idx] << " " 
-//                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
-//                << meanS[true][locus_idx] << " "
-//                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-//                meanS[locus_idx]) << " ";
-
-            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-                meanS[clone.is_female][locus_idx]) < par.stability_threshold)
+            // sample loci from a uniform distribution
+            for (unsigned int locus_idx{0};
+                    locus_idx < par.L;
+                    ++locus_idx)
             {
-                Ce[locus_idx] += 1.0;
-            }
-        } // end for locus_idx
+                if (locus_idx == par.sex_specific_locus_idx)
+                {
+                    clone.S[0][locus_idx] = par.sk[sex_idx];
+                } 
+                else
+                {
+                    clone.S[0][locus_idx] = uniform(rng_r);
+                }
+            } // end for locus_idx
 
-        std::cout << std::endl;
-    } // end for individual_idx
-    
-    for (unsigned int locus_idx{0};
-            locus_idx < par.L;
-            ++locus_idx)
-    {
-        Ce[locus_idx] /= par.N_environmental_canalization;
-    }
+            assert(clone.S.size() == par.max_dev_time_step_envt_canalize);
+
+            for (unsigned int dev_time_step_idx{0}; 
+                    dev_time_step_idx < par.max_dev_time_step_envt_canalize;
+                    ++dev_time_step_idx)
+            {
+                clone.update_phenotype(dev_time_step_idx);
+    //            std::cout << "clone " << individual_idx << " ";
+
+    //            for (unsigned int locus_idx{0};
+    //                    locus_idx < par.L;
+    //                    ++locus_idx)
+    //            {
+    //                std::cout << locus_idx << " " << clone.S[dev_time_step_idx][locus_idx] << " ";
+    //            }
+    //
+    //            std::cout << std::endl;
+            } // end for unsigned int dev_time_step_idx
+
+            // now calculate difference with reference individual
+            for (unsigned int locus_idx{0};
+                    locus_idx < par.L;
+                    ++locus_idx)
+            {
+    //            std::cout << locus_idx << ": " 
+    //                << clone.S[0][locus_idx] << " " 
+    //                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
+    //                << meanS[true][locus_idx] << " "
+    //                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+    //                meanS[locus_idx]) << " ";
+
+                if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+                    meanS[clone.is_female][locus_idx]) < par.stability_threshold)
+                {
+                    Ce[clone.is_female][locus_idx] += 1.0;
+                }
+            } // end for locus_idx
+
+            std::cout << std::endl;
+        } // end for individual_idx
+        
+        for (unsigned int locus_idx{0};
+                locus_idx < par.L;
+                ++locus_idx)
+        {
+            Ce[sex_idx][locus_idx] /= par.N_environmental_canalization;
+        }
+    }// end for sex_idx
 }// end environmental_canalization()
 
 // assess time to equilibrium for phenotypes of
