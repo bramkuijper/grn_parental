@@ -86,8 +86,12 @@ Individual::Individual(Individual const &mom,
     // products, contained in the phenotype vector S
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {
+        // if the locus is the sex-specific one, then set
+        // the initial level of expression accordingly,
+        // otherwise just set it to be equal to the constitutive 
+        // gene expression
         initial_expression = 
-            row_idx == par.sex_specific_locus_idx ? pars.sk[is_female] : pars.a;
+            row_idx == pars.sex_specific_locus_idx ? pars.sk[is_female] : pars.a;
 
         // at the moment this does not deal with absolute gamete size
         // a 1:5 ratio of paternal:maternal gamete sizes has p_maternal 5/6

@@ -191,14 +191,19 @@ void GRN_MatPat::reproduce()
     for (unsigned offspring_idx{0}; 
             offspring_idx < par.N; ++offspring_idx)
     {
+        // random mating, fathers and mothers
+        // are chosen from the fitness-weighted sampling
+        // distribution
         father_idx = male_sampler(rng_r);
         mother_idx = female_sampler(rng_r);
 
+        // check whether values make sense
         assert(father_idx < males.size());
         assert(mother_idx < females.size());
 
+        // use birth constructor to produce an individual
         juveniles.push_back(
-                Individual(             // use birth constructor 
+                Individual(             
                     females[mother_idx],
                     males[father_idx],
                     par,
@@ -207,8 +212,13 @@ void GRN_MatPat::reproduce()
                 );
     }
 
+    // once all juveniles are produced
+    // remove males and obtain new population
+    // from juveniles (non-overlapping generations)
     males.clear();
     females.clear();
+
+    assert(juveniles.size() >= par.N);
 
     for (unsigned adult_idx{0};
             adult_idx < par.N; ++adult_idx)
@@ -222,8 +232,6 @@ void GRN_MatPat::reproduce()
             females.push_back(juveniles[adult_idx]);
         }
     }
-
-    juveniles.clear();
 } // end reproduce()
 
 // give the column headers to the data file
@@ -639,7 +647,11 @@ void GRN_MatPat::genetic_canalization()
         assert(row_idx_to_mutate < par.L);
 
         // assign all the weights
+        // equal to the mean regulatory network in the population
         clone.W = meanW;
+        
+        // then change one element by mutation
+        clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
 
         // first assign this individual the average W
         for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
@@ -653,8 +665,6 @@ void GRN_MatPat::genetic_canalization()
                 + par.p_nongenetic * meanS[row_idx];
         }
        
-        // then change one element by mutation
-        clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
 
         // have the clone develop over the developmental time steps
         for (unsigned dev_time_step_idx{0}; 
@@ -692,7 +702,7 @@ void GRN_MatPat::genetic_canalization()
     {
         C[locus_idx] /= par.N_genetic_canalization;
     }
-} // end mean_canalization 
+} // end genetic canalization()
 
 // obtain statistics on the amount of environmental
 // canalization, as per Odorico et al p.690, 1st col,
@@ -756,15 +766,15 @@ void GRN_MatPat::environmental_canalization()
 //                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
 //                meanS[locus_idx]) << " ";
 
-//            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-//                meanS[locus_idx]) < par.stability_threshold)
-//            {
-//                Ce[locus_idx] += 1.0;
-//            }
+            if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+                meanS[locus_idx]) < par.canalization_threshold)
+            {
+                Ce[locus_idx] += 1.0;
+            }
             
-            Ce[locus_idx] +=  std::fabs(
-                    clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] - 
-                    meanS[locus_idx]);
+//            Ce[locus_idx] +=  std::fabs(
+//                    clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] - 
+//                    meanS[locus_idx]);
 
         } // end for locus_idx
 

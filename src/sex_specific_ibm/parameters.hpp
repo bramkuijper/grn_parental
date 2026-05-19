@@ -125,6 +125,8 @@ class Parameters
 
         Parameters(unsigned const Lval) : 
             L(Lval),
+            p_maternal(Lval, 0.0),
+            p_nongenetic(Lval, 0.0),
             sex_specific_locus_idx(Lval - 1),
             theta(2, std::vector < double > (Lval,0.0)), // initialize all the values for theta
             s(L, 0.0), // initialize all the values for s, the strength of selection on each trait (0 = no selection)

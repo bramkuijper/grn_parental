@@ -55,16 +55,18 @@ class GRN_MatPat
         std::vector < std::vector < double > > meanW;
 
         // mean values of gene expression for each locus
-        std::vector < double > meanS;
+        // and for each sex
+        std::vector < std::vector <double > > meanS;
 
         // mean genetic canalisation values as in the 
         // fraction of individuals unperturbed by a
         // single genetic mutation
-        std::vector < double > C;
+        std::vector < std::vector <double > > C;
+
         // mean genetic canalisation values as in the 
         // fraction of individuals unperturbed by 
         // environmental perturbations
-        std::vector < double > Ce;
+        std::vector < std::vector <double > > Ce;
 
     public:
         // the constructor of the simulation
@@ -89,8 +91,6 @@ class GRN_MatPat
         // against which clones with a mutation
         // will be compared 
         void make_reference_individual(Individual &ref);
-
-
 };
 
 #endif

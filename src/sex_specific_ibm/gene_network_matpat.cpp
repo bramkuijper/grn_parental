@@ -4,9 +4,6 @@
 #include "individual.hpp"
 #include "gene_network_matpat.hpp"
 
-// TODO: should parental effects also influence
-// sex-specific regulatory locus, at the moment they do but 
-// perhaps it should not.
 //TODO:offspring size, have size affect the selective optimum
 //then we have three channels: genes, RNA, size
 //remaining channel: epigenetics
@@ -21,7 +18,7 @@ GRN_MatPat::GRN_MatPat(Parameters const &par) :
     males(par.N/2, Individual(par, false)), // initialize the males
     females(par.N/2, Individual(par, true)), // initialize females
     meanW(par.L, std::vector < double >(par.L)), // the matrix with mean values for each matrix element (for canalization tests)
-    meanS(par.L, 0.0), // vector with mean values of gene expression at the end of development
+    meanS(2, std::vector<double>(par.L,0.0)), // vector with mean values of gene expression at the end of development
     C(par.L, 0.0), // the vector with the percentage of mutations in network without effect on gene expression
     Ce(par.L, 0.0) // the vector with the percentage of networks that are unchanged despite envtal perturbation 
 {
@@ -251,14 +248,21 @@ void GRN_MatPat::write_data_headers()
             << "distance_optimum" << ";"
             << "var_distance_optimum" << ";";
 
+    std::string sex_specifier;
+
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
-        data_file << "sbar" << (row_idx + 1) << ";"
-            << "varsbar" << (row_idx + 1) << ";"
-            << "v" << (row_idx + 1) << ";"
-            << "varv" << (row_idx + 1) << ";"
-            << "C" << (row_idx + 1) << ";"
-            << "Ce" << (row_idx + 1) << ";";
+        for (unsigned sex_idx{0}; sex_idx < 2; ++sex_idx)
+        {
+            sex_specifier = sex_idx == 0 ? "m" : "f";
+
+            data_file << "sbar" << "_" << sex_specifier << (row_idx + 1) << ";"
+                << "varsbar" << "_" << sex_specifier << (row_idx + 1) << ";"
+                << "v" << "_" << sex_specifier << (row_idx + 1) << ";"
+                << "varv" << "_" << sex_specifier << (row_idx + 1) << ";"
+                << "C" << "_" << sex_specifier << (row_idx + 1) << ";"
+                << "Ce" << "_" << sex_specifier << (row_idx + 1) << ";";
+        }
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -274,13 +278,14 @@ void GRN_MatPat::write_data_headers()
 void GRN_MatPat::write_data()
 {
     // allocate a 1d matrix to store the population stats for S
-    std::vector < double > meanSbar(par.L, 0.0); 
-    std::vector < double > varSbar(par.L, 0.0); 
+    // for each of the two sexes and then for each phenotypic trait
+    std::vector < std::vector < double > > meanSbar(2, std::vector < double > (par.L, 0.0)); 
+    std::vector < std::vector < double > > varSbar(2, std::vector < double > (par.L, 0.0)); 
     
     // allocate a 1d matrix to store the population stats for V
     // the within-individual variance over time in S
-    std::vector < double > meanV(par.L, 0.0); 
-    std::vector < double > varV(par.L, 0.0); 
+    std::vector < std::vector < double > > meanV(2, std::vector < double > (par.L, 0.0)); 
+    std::vector < std::vector < double > > varV(2, std::vector < double > (par.L, 0.0)); 
 
     // parameters for mean fitness and variance in fitness
     double mean_fitness{0.0};
@@ -322,12 +327,12 @@ void GRN_MatPat::write_data()
         for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
         {
             x = male_iterator->Sbar[row_idx];
-            meanSbar[row_idx] += x;
-            varSbar[row_idx] += x*x;
+            meanSbar[false][row_idx] += x;
+            varSbar[false][row_idx] += x*x;
 
             x = male_iterator->V[row_idx];
-            meanV[row_idx] += x;
-            varV[row_idx] += x*x;
+            meanV[false][row_idx] += x;
+            varV[false][row_idx] += x*x;
 
             for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
             {
@@ -355,13 +360,13 @@ void GRN_MatPat::write_data()
         {
             x = female_iterator->Sbar[row_idx];
 
-            meanSbar[row_idx] += x;
-            varSbar[row_idx] += x*x;
+            meanSbar[true][row_idx] += x;
+            varSbar[true][row_idx] += x*x;
 
             x = female_iterator->V[row_idx];
 
-            meanV[row_idx] += x;
-            varV[row_idx] += x*x;
+            meanV[true][row_idx] += x;
+            varV[true][row_idx] += x*x;
 
             for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
             {
@@ -397,20 +402,23 @@ void GRN_MatPat::write_data()
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
-        meanSbar[row_idx] /= nf + nm;
-        varSbar[row_idx] = varSbar[row_idx] / (nf + nm) - 
-            meanSbar[row_idx] * meanSbar[row_idx];
-        
-        meanV[row_idx] /= nf + nm;
-        varV[row_idx] = varV[row_idx] / (nf + nm) - 
-            meanV[row_idx] * meanV[row_idx];
+        for (unsigned sex_idx{0}; sex_idx < 2; ++sex_idx)
+        {
+            meanSbar[sex_idx][row_idx] /= nf + nm;
+            varSbar[sex_idx][row_idx] = varSbar[sex_idx][row_idx] / (nf + nm) - 
+                meanSbar[sex_idx][row_idx] * meanSbar[sex_idx][row_idx];
+            
+            meanV[sex_idx][row_idx] /= nf + nm;
+            varV[sex_idx][row_idx] = varV[sex_idx][row_idx] / (nf + nm) - 
+                meanV[sex_idx][row_idx] * meanV[sex_idx][row_idx];
 
-        data_file << meanSbar[row_idx] << ";"
-            << varSbar[row_idx] << ";"
-            << meanV[row_idx] << ";"
-            << varV[row_idx] << ";"
-            << C[row_idx] << ";"
-            << Ce[row_idx] << ";";
+            data_file << meanSbar[sex_idx][row_idx] << ";"
+                << varSbar[sex_idx][row_idx] << ";"
+                << meanV[sex_idx][row_idx] << ";"
+                << varV[sex_idx][row_idx] << ";"
+                << C[sex_idx][row_idx] << ";"
+                << Ce[sex_idx][row_idx] << ";";
+        }
 
         for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
         {
@@ -562,21 +570,32 @@ void GRN_MatPat::write_parameters()
 
 } // end write_parameters
 
-void GRN_MatPat::make_reference_individual(Individual &ref, bool is_female)
+void GRN_MatPat::make_reference_individual(Individual &ref)
 {
     // first assign this individual the average W
     ref.W = meanW;
+
+    double initial_expression;
+
+    bool is_female = ref.is_female;
     
     // then initilize gene loci
     for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
     {
+        // if the locus is the sex-specific one, then set
+        // the initial level of expression accordingly,
+        // otherwise just set it to be equal to the constitutive 
+        // gene expression
+        initial_expression = 
+            row_idx == par.sex_specific_locus_idx ? par.sk[is_female] : par.a;
+
         // now perform development given an average S0
         //
         // because the mean phenotype is the same for males and females
         // no need to focus on paternal vs maternal effects. However, 
         // once we study sexual dimorphism, we can fully implement this
         ref.S[0][row_idx] = (1.0 - par.p_nongenetic[row_idx]) * par.a
-            + par.p_nongenetic[row_idx] * meanS[row_idx];
+            + par.p_nongenetic[row_idx] * meanS[is_female][row_idx];
     }
         
     // development, yay
@@ -602,104 +621,127 @@ void GRN_MatPat::genetic_canalization()
 
     // first make a reference individual
     // against which all the clones will be compared
-    Individual reference_individual(par);
-    make_reference_individual(reference_individual);
+    Individual reference_male(par, false);
+    Individual reference_female(par, true);
+    make_reference_individual(reference_male);
+    make_reference_individual(reference_female);
    
     // some error checking, to ensure the mean values of W
     // are indeed properly copied over to the reference individual
-    assert(reference_individual.W[par.L - 1][1] == meanW[par.L - 1][1]);
-    assert(reference_individual.W[0][par.L - 1] == meanW[0][par.L - 1]);
+    assert(reference_male.W[par.L - 1][1] == meanW[par.L - 1][1]);
+    assert(reference_male.W[0][par.L - 1] == meanW[0][par.L - 1]);
+    assert(reference_female.W[par.L - 1][1] == meanW[par.L - 1][1]);
+    assert(reference_female.W[0][par.L - 1] == meanW[0][par.L - 1]);
 
     // reset C to 0.0
-    fill(C.begin(), C.end(), 0.0);
+    C = std::vector < std::vector < double > >(2, std::vector <double> (par.L,0.0));
 
-    double expression_difference_i;
+    double expression_difference_i, initial_expression;
 
-    // now generate 1000 clones with 1 mutation. I take it mutation works 
-    // by simply changing one of the wij's by mutation
-    for (unsigned int individual_idx{0}; 
-            individual_idx < par.N_genetic_canalization; ++individual_idx)
+    unsigned node_sequential_id, 
+             col_idx_to_mutate, 
+             row_idx_to_mutate;
+
+    for (unsigned sex_idx{0}; sex_idx < 2; ++sex_idx)
     {
-        // make a clone
-        Individual clone(par);
-
-        // randomly sample a number between 0 and par.L^2, which is
-        // sampling the id of the w_ij to mutate
-        unsigned node_sequential_id{node_sampler(rng_r)};
-
-        // find the column and the row that belongs to this value
-        // use modulo operator to get column, as: 
-        // number               0 1 2 3 4 5 6 7 ... par.L^2 - 1 
-        // number % par.L       0 1 2 3 4 5 0 1 ... par.L - 1
-        //
-        // we use floor of number / L to get the row
-        // number               0 1 2 3 4 5 6 7 ... par.L - 1 
-        // floor(number/L)      0 0 0 0 0 1 1 1 ... par.L - 1
-        unsigned col_idx_to_mutate{node_sequential_id % par.L};
-
-        unsigned row_idx_to_mutate{
-            static_cast<unsigned>(
-                        std::floor(
-                            static_cast<double>(
-                                node_sequential_id) / par.L
-                            )
-                        )
-                    };
-
-        // do bounds checking on the col and row
-        // of the element that is selected for mutation
-        assert(col_idx_to_mutate >= 0);
-        assert(col_idx_to_mutate < par.L);
-
-        assert(row_idx_to_mutate >= 0);
-        assert(row_idx_to_mutate < par.L);
-
-        // assign all the weights
-        clone.W = meanW;
-
-        // first assign this individual the average W
-        for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
+        // now generate 1000 clones with 1 mutation. I take it mutation works 
+        // by simply changing one of the wij's by mutation
+        for (unsigned int individual_idx{0}; 
+                individual_idx < par.N_genetic_canalization; ++individual_idx)
         {
-            // now perform development given an average S0
-            //
-            // because the mean phenotype is the same for males and females
-            // no need to focus on paternal vs maternal effects. However, 
-            // once we study sexual dimorphism, we can fully implement this
-            clone.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
-                + par.p_nongenetic * meanS[row_idx];
-        }
-       
-        // then change one element by mutation
-        clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
+            // make a clone
+            Individual clone(par, static_cast<bool>(sex_idx));
 
-        // have the clone develop over the developmental time steps
-        for (unsigned dev_time_step_idx{0}; 
-                dev_time_step_idx < par.max_dev_time_step;
-                ++dev_time_step_idx)
-        {
-            clone.update_phenotype(dev_time_step_idx);
-        }
-
-        // now look at gene loci at the final dev time step
-        // and see how it differs from the reference individual,
-        // that is the value of C_i as per page 690 first col
-        // 3rd paragraph in Odorico et al
-        for (unsigned int locus_idx{0}; locus_idx < par.L; ++locus_idx)
-        {
-            // calculate expression difference between current and reference
-            // individual
-            expression_difference_i = std::fabs(clone.S[par.max_dev_time_step - 1][locus_idx] - 
-                reference_individual.S[par.max_dev_time_step - 1][locus_idx]);
-
-            // only calculate those individuals whose gene expression is
-            // unaltered despite mutation
-            if (expression_difference_i < 
-                    par.canalization_threshold)
+            do 
             {
-                C[locus_idx] += 1.0;
+                // randomly sample a number between 0 and par.L^2, which is
+                // sampling the id of the w_ij to mutate
+                node_sequential_id = node_sampler(rng_r);
+
+                // find the column and the row that belongs to this value
+                // use modulo operator to get column, as: 
+                // number               0 1 2 3 4 5 6 7 ... par.L^2 - 1 
+                // number % par.L       0 1 2 3 4 5 0 1 ... par.L - 1
+                //
+                // we use floor of number / L to get the row
+                // number               0 1 2 3 4 5 6 7 ... par.L - 1 
+                // floor(number/L)      0 0 0 0 0 1 1 1 ... par.L - 1
+                col_idx_to_mutate = node_sequential_id % par.L;
+
+                row_idx_to_mutate = 
+                    static_cast<unsigned>(
+                                std::floor(
+                                    static_cast<double>(
+                                        node_sequential_id) / par.L
+                                    )
+                                );
+
+                // sample another locus if this is part of the 
+                // sex specific hierarchy
+            } while(row_idx_to_mutate == par.sex_specific_locus_idx
+                    && row_idx_to_mutate != col_idx_to_mutate);
+
+            // do bounds checking on the col and row
+            // of the element that is selected for mutation
+            assert(col_idx_to_mutate >= 0);
+            assert(col_idx_to_mutate < par.L);
+
+            assert(row_idx_to_mutate >= 0);
+            assert(row_idx_to_mutate < par.L);
+
+            // assign all the weights
+            clone.W = meanW;
+
+            // first assign this individual the average W
+            for (unsigned int row_idx{0}; row_idx < par.L; ++row_idx)
+            {
+                initial_expression = 
+                    row_idx == par.sex_specific_locus_idx ? 
+                        par.sk[sex_idx] 
+                        : 
+                        par.a;
+                // now perform development given an average S0
+                //
+                // because the mean phenotype is the same for males and females
+                // no need to focus on paternal vs maternal effects. However, 
+                // once we study sexual dimorphism, we can fully implement this
+                clone.S[0][row_idx] = 
+                    (1.0 - par.p_nongenetic[row_idx]) * initial_expression
+                    + par.p_nongenetic[row_idx] * par.p_maternal[row_idx] * meanS[true][row_idx]
+                    + par.p_nongenetic[row_idx] * (1.0 - par.p_maternal[row_idx]) * meanS[false][row_idx];
             }
-        } // end for unsigned locus_idx
-    } // end for unsigned individual_idx
+           
+            // then change one element by mutation
+            clone.W[row_idx_to_mutate][col_idx_to_mutate] += normal(rng_r) * par.sdmu_w;
+
+            // have the clone develop over the developmental time steps
+            for (unsigned dev_time_step_idx{0}; 
+                    dev_time_step_idx < par.max_dev_time_step;
+                    ++dev_time_step_idx)
+            {
+                clone.update_phenotype(dev_time_step_idx);
+            }
+
+            // now look at gene loci at the final dev time step
+            // and see how it differs from the reference individual,
+            // that is the value of C_i as per page 690 first col
+            // 3rd paragraph in Odorico et al
+            for (unsigned int locus_idx{0}; locus_idx < par.L; ++locus_idx)
+            {
+                // calculate expression difference between current and reference
+                // individual
+                expression_difference_i = std::fabs(clone.S[par.max_dev_time_step - 1][locus_idx] - 
+                    reference_individual.S[par.max_dev_time_step - 1][locus_idx]);
+
+                // only calculate those individuals whose gene expression is
+                // unaltered despite mutation
+                if (expression_difference_i < 
+                        par.canalization_threshold)
+                {
+                    C[locus_idx] += 1.0;
+                }
+            } // end for unsigned locus_idx
+        } // end for unsigned individual_idx
 
     // now finallly transform C (which is counts up to now)
     // to contain percentages
@@ -765,15 +807,15 @@ void GRN_MatPat::environmental_canalization()
                 locus_idx < par.L;
                 ++locus_idx)
         {
-            std::cout << locus_idx << ": " 
-                << clone.S[0][locus_idx] << " " 
-                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
-                << meanS[locus_idx] << " "
-                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-                meanS[locus_idx]) << " ";
+//            std::cout << locus_idx << ": " 
+//                << clone.S[0][locus_idx] << " " 
+//                << clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] << " " 
+//                << meanS[true][locus_idx] << " "
+//                << std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
+//                meanS[locus_idx]) << " ";
 
             if (std::fabs(clone.S[par.max_dev_time_step_envt_canalize - 1][locus_idx] -
-                meanS[locus_idx]) < par.stability_threshold)
+                meanS[clone.is_female][locus_idx]) < par.stability_threshold)
             {
                 Ce[locus_idx] += 1.0;
             }
