@@ -70,7 +70,7 @@ Individual::Individual(Individual const &mom,
             if (row_idx == par.sex_specific_locus_idx
                     && col_idx != row_idx)
             {
-                continue;
+                W[row_idx][col_idx] = 0.0;
             }
 
             // mutate the allele after inheritance
@@ -81,26 +81,29 @@ Individual::Individual(Individual const &mom,
         }
     } // end for unsigned
     
+    double initial_expression;
     // now biparental transmission of the gene expression
     // products, contained in the phenotype vector S
     for (unsigned int row_idx{0}; row_idx < pars.L; ++row_idx)
     {
+        initial_expression = 
+            row_idx == par.sex_specific_locus_idx ? pars.sk[is_female] : pars.a;
+
         // at the moment this does not deal with absolute gamete size
         // a 1:5 ratio of paternal:maternal gamete sizes has p_maternal 5/6
         // but also a 10:50 ratio of paternal gamete sizes has the same p_maternal
         // this may be fair but in the latter case, both parents transmit a lot more
         // gene product than in the former case. Model does not deal with that stuff
         // at the moment... TODO
-        S[0][row_idx] = (1.0 - pars.p_nongenetic) * 
-            (row_idx == par.sex_specific_locus_idx ? pars.sk[is_female] : pars.a)
-            + pars.p_nongenetic * (
+        S[0][row_idx] = (1.0 - pars.p_nongenetic[row_idx]) * initial_expression
+            + pars.p_nongenetic[row_idx] * (
                     // transmit maternal gene expression level right before she
                     // reproduces
-                    pars.p_maternal * mom.S[pars.max_dev_time_step - 1][row_idx]
+                    pars.p_maternal[row_idx] * mom.S[pars.max_dev_time_step - 1][row_idx]
                     +
                     // transmit paternal gene expression level right before he
                     // reproduces
-                    (1.0 - pars.p_maternal) * dad.S[pars.max_dev_time_step - 1][row_idx]
+                    (1.0 - pars.p_maternal[row_idx]) * dad.S[pars.max_dev_time_step - 1][row_idx]
                 );
     } // end transmission of S
 } // end birth constructor
@@ -145,8 +148,8 @@ double Individual::fitness()
         diff_optimum = (Sbar[s_idx] - pars.theta[is_female][s_idx]);
 
         // the power function pow() slower than actually just squaring things
-        exponent += -pars.s[is_female][s_idx] * diff_optimum * diff_optimum
-            -pars.sprime[is_female][s_idx] * V[s_idx];  
+        exponent += -pars.s[s_idx] * diff_optimum * diff_optimum
+            -pars.sprime[s_idx] * V[s_idx];  
     }
 
     return(pars.baseline_fitness + std::exp(exponent));

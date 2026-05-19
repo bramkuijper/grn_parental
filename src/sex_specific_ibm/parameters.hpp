@@ -49,7 +49,7 @@ class Parameters
         double a{0.2};
 
         // proportion inheritance that is nongenetic
-        double p_nongenetic{0.0};
+        std::vector <double> p_nongenetic;
 
         // if proportion inheritance > 0
         // then p_maternal determines proportion inherited
@@ -57,7 +57,7 @@ class Parameters
         //
         // alternative ideas would be to designate specific
         // genes to maternal vs paternal transmission
-        double p_maternal{0.0};
+        std::vector <double> p_maternal;
 
         // maximum number of time steps that simulation lasts
         unsigned long max_time_step{10};

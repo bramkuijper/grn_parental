@@ -76,6 +76,14 @@ void GRN_MatPat::initialize_population()
         {
             for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
             {
+                
+                if (row_idx == par.sex_specific_locus_idx
+                        && col_idx != row_idx)
+                {
+                    male_iterator->W[row_idx][col_idx] = 0.0;
+                    continue;
+                }
+                
                 male_iterator->W[row_idx][col_idx] = 
                     par.sd_init_strength_w * normal(rng_r);
             }
@@ -92,6 +100,13 @@ void GRN_MatPat::initialize_population()
         {
             for (unsigned col_idx{0}; col_idx < par.L; ++col_idx)
             {
+                if (row_idx == par.sex_specific_locus_idx
+                        && col_idx != row_idx)
+                {
+                    female_iterator->W[row_idx][col_idx] = 0.0;
+                    continue;
+                }
+
                 female_iterator->W[row_idx][col_idx] = 
                     par.sd_init_strength_w * normal(rng_r);
             }
@@ -528,8 +543,6 @@ void GRN_MatPat::write_parameters()
         << "s_init;" << par.s_init << std::endl
         << "sd_init_strength_w;" << par.sd_init_strength_w << std::endl
         << "a;" << par.a << std::endl
-        << "p_nongenetic;" << par.p_nongenetic << std::endl
-        << "p_maternal;" << par.p_maternal << std::endl
         << "max_time_step;" << par.max_time_step << std::endl
         << "max_dev_time_step;" << par.max_dev_time_step << std::endl
         << "max_dev_time_step_nstats;" << par.max_dev_time_step_stats << std::endl
@@ -539,15 +552,17 @@ void GRN_MatPat::write_parameters()
 
     for (unsigned row_idx{0}; row_idx < par.L; ++row_idx)
     {
-        data_file << "theta_f" << (row_idx + 1) << ";" << par.theta_f[row_idx] << std::endl;
-        data_file << "theta_m" << (row_idx + 1) << ";" << par.theta_m[row_idx] << std::endl;
-        data_file << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl;
-        data_file << "sprime" << (row_idx + 1) << ";" << par.sprime[row_idx] << std::endl;
+        data_file << "theta_f" << (row_idx + 1) << ";" << par.theta[true][row_idx] << std::endl
+            << "theta_m" << (row_idx + 1) << ";" << par.theta[false][row_idx] << std::endl
+            << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl
+            << "sprime" << (row_idx + 1) << ";" << par.sprime[row_idx] << std::endl
+            << "p_nongenetic" << (row_idx + 1) << ";" << par.p_nongenetic[row_idx] << std::endl
+            << "p_maternal;" << (row_idx + 1) << ";" << par.p_maternal[row_idx] << std::endl;
     }
 
 } // end write_parameters
 
-void GRN_MatPat::make_reference_individual(Individual &ref)
+void GRN_MatPat::make_reference_individual(Individual &ref, bool is_female)
 {
     // first assign this individual the average W
     ref.W = meanW;
@@ -560,8 +575,8 @@ void GRN_MatPat::make_reference_individual(Individual &ref)
         // because the mean phenotype is the same for males and females
         // no need to focus on paternal vs maternal effects. However, 
         // once we study sexual dimorphism, we can fully implement this
-        ref.S[0][row_idx] = (1.0 - par.p_nongenetic) * par.a
-            + par.p_nongenetic * meanS[row_idx];
+        ref.S[0][row_idx] = (1.0 - par.p_nongenetic[row_idx]) * par.a
+            + par.p_nongenetic[row_idx] * meanS[row_idx];
     }
         
     // development, yay
