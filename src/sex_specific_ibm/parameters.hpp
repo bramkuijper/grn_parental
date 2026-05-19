@@ -29,7 +29,7 @@ class Parameters
 
         // initial levels of gene expression for
         // the sex-specific locus
-        double sk[2]{0.0,1.0};
+        double init_sk[2]{0.0,1.0};
 
         // the locus of the sex-determining 
         // master gene, 

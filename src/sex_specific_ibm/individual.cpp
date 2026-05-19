@@ -91,7 +91,7 @@ Individual::Individual(Individual const &mom,
         // otherwise just set it to be equal to the constitutive 
         // gene expression
         initial_expression = 
-            row_idx == pars.sex_specific_locus_idx ? pars.sk[is_female] : pars.a;
+            row_idx == pars.sex_specific_locus_idx ? pars.init_sk[is_female] : pars.a;
 
         // at the moment this does not deal with absolute gamete size
         // a 1:5 ratio of paternal:maternal gamete sizes has p_maternal 5/6

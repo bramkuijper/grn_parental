@@ -565,7 +565,7 @@ void GRN_MatPat::write_parameters()
             << "s" << (row_idx + 1) << ";" << par.s[row_idx] << std::endl
             << "sprime" << (row_idx + 1) << ";" << par.sprime[row_idx] << std::endl
             << "p_nongenetic" << (row_idx + 1) << ";" << par.p_nongenetic[row_idx] << std::endl
-            << "p_maternal;" << (row_idx + 1) << ";" << par.p_maternal[row_idx] << std::endl;
+            << "p_maternal" << (row_idx + 1) << ";" << par.p_maternal[row_idx] << std::endl;
     }
 
 } // end write_parameters
@@ -587,7 +587,7 @@ void GRN_MatPat::make_reference_individual(Individual &ref)
         // otherwise just set it to be equal to the constitutive 
         // gene expression
         initial_expression = 
-            row_idx == par.sex_specific_locus_idx ? par.sk[is_female] : par.a;
+            row_idx == par.sex_specific_locus_idx ? par.init_sk[is_female] : par.a;
 
         // now perform development given an average S0
         //
@@ -702,7 +702,7 @@ void GRN_MatPat::genetic_canalization()
             {
                 initial_expression = 
                     row_idx == par.sex_specific_locus_idx ? 
-                        par.sk[sex_idx] 
+                        par.init_sk[sex_idx] 
                         : 
                         par.a;
                 // now perform development given an average S0
@@ -792,7 +792,7 @@ void GRN_MatPat::environmental_canalization()
             {
                 if (locus_idx == par.sex_specific_locus_idx)
                 {
-                    clone.S[0][locus_idx] = par.sk[sex_idx];
+                    clone.S[0][locus_idx] = par.init_sk[sex_idx];
                 } 
                 else
                 {

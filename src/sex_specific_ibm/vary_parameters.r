@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 
 # number of replicates
-nrep <- 20
+nrep <- 3
 
 # maximum amount of generations a simulation runs
-maxgen <- 10000
+maxgen <- 50000
 
 # output interval in the data file, i.e., 
 # how many timesteps until the next statistics are written out
@@ -22,16 +22,27 @@ a <- 0.2
 # the first two are given nonnegative values, the other 
 # loci stabilize around 0 (if they are under selection at all,
 # see the s vector) 
-theta <- numeric(length = L)
+theta_f <- numeric(length = L)
+theta_m <- numeric(length = L)
 
 # see Odorico et al Fig S3 for parameter values
-theta[1] <- 0.33
-theta[2] <- 2*theta[1]
+theta_f[1] <- 0.33
+theta_f[2] <- 2*theta_f[1]
+
+theta_m[1] <- theta_f[2]
+theta_m[2] <- theta_f[1]
+
+# initial gene expression for sex specific locus
+# c(male, female)
+init_sk <- c(0,1)
+
 
 # fraction of phenotype that is nongenetically inherited
 p_nongenetic <- c(0.0)
 
-p_maternal <- c(0.25)
+# fraction of phenotype given that it is nongenetically inherited
+# is from mother, the remainder is from father
+p_maternal <- c(0)
 
 # number of time steps before development is completed
 dev_time <- c(24)
@@ -90,7 +101,16 @@ for (rep_i in 1:nrep)
 {
       for (p_nongenetic_i in p_nongenetic)
       {
-          for (p_maternal_i in p_maternal)
+	      p_maternal_x <- p_maternal
+	      # if p_nongenetic is 0 no need
+	      # to vary over all p_maternal combinations
+	      # as there is no nongenetic effect anywayz
+	      if (p_nongenetic_i == 0.0)
+	      {
+		      p_maternal_x <- c(0.0)
+	      }
+          
+          for (p_maternal_i in p_maternal_x)
           {
               for (dev_time_i in dev_time)
               {
@@ -104,6 +124,9 @@ for (rep_i in 1:nrep)
                   file_name_individuals_i <- paste0(
                           output_file_prefix,"_individuals_",counter)
 
+                  p_nongenetic_vec <- c(rep(p_nongenetic_i,times = L - 1), 0)
+                  p_maternal_vec <- c(rep(p_maternal_i,times = L - 1), 0)
+
                   # add a line that spits out a number to the screen
                   # to inform the user how many simulations have been
                   # processed
@@ -112,17 +135,22 @@ for (rep_i in 1:nrep)
                   command_str <- paste(exe,
                                   L,
                                   "\t",
-                                  paste(theta, collapse=" "),
+                                  paste(theta_m, collapse=" "),
+                                  "\t",
+                                  paste(theta_f, collapse=" "),
                                   "\t",
                                   maxgen,
                                   "\t",
-                                  p_nongenetic_i,
-                                  p_maternal_i,
+                                  paste(p_nongenetic_vec, collapse=" "),
+                                  "\t",
+                                  paste(p_maternal_vec, collapse=" "),
                                   "\t",
                                   dev_time_i,
                                   paste(s_values, collapse=" "),
                                   "\t",
                                   paste(sprime,collapse=" "),
+                                  "\t",
+                                  paste(init_sk,collapse=" "),
                                   "\t",
                                   output_interval,
                                   file_name_i,
@@ -133,7 +161,8 @@ for (rep_i in 1:nrep)
                           ,"\n"
                           ,echo_str
                           ,"\n"
-                          ,command_str)
+                          ,command_str,
+                          "\n")
               }
           } # end dev_time
     } # end p_nongenetic_i

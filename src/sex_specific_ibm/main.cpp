@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 
     for (size_t sk_idx{0}; sk_idx <2; ++sk_idx)
     {
-        pars.sk[sk_idx] = std::stod(argv[argv_idx++]);
+        pars.init_sk[sk_idx] = std::stod(argv[argv_idx++]);
     }
 
     pars.data_output_interval = static_cast<unsigned>(std::stoi(argv[argv_idx++]));
